@@ -66,7 +66,7 @@ export default async function AgentPage() {
           <span
             className={
               agent.status === 'active'
-                ? 'h-1.5 w-1.5 rounded-full bg-neon shadow-[0_0_6px_var(--neon)]'
+                ? 'h-1.5 w-1.5 rounded-full bg-success'
                 : 'h-1.5 w-1.5 rounded-full bg-muted-foreground'
             }
           />

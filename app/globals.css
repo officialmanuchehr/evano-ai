@@ -41,6 +41,8 @@
   --color-card: var(--card);
   --color-neon: var(--neon);
   --color-neon-foreground: var(--neon-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -53,84 +55,93 @@
 /* =============================================================================
    EVANO AI BRAND — white base, electric blue primary, neon cyan glow accents
    ============================================================================= */
+/* =============================================================================
+   EVANO AI BRAND — warm off-white / near-black, coral accent, green for success
+   Palette: coral #FF5B3A · coral tint #FFE7E0 · dark #0E1117 · text #10131A ·
+            warm off-white #F7F5F0 · green #1F8A70
+   ============================================================================= */
 :root {
-  --brand-mark: #004aad; /* logo blue */
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.2 0.04 265);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2 0.04 265);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.2 0.04 265);
-  --primary: oklch(0.55 0.24 263);            /* electric blue */
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.96 0.02 250);          /* pale ice blue */
-  --secondary-foreground: oklch(0.3 0.12 263);
-  --muted: oklch(0.975 0.01 250);
-  --muted-foreground: oklch(0.52 0.03 260);
-  --accent: oklch(0.95 0.04 230);
-  --accent-foreground: oklch(0.3 0.12 263);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.02 255);
-  --input: oklch(0.9 0.025 255);
-  --ring: oklch(0.62 0.2 255);
-  --neon: oklch(0.82 0.16 210);               /* neon cyan — glows and highlights */
-  --neon-foreground: oklch(0.2 0.04 265);
-  --glow: 0 0 0 1px oklch(0.62 0.22 258 / 25%), 0 0 18px oklch(0.62 0.22 258 / 35%), 0 0 42px oklch(0.82 0.16 210 / 22%);
-  --glow-strong: 0 0 0 1px oklch(0.62 0.22 258 / 45%), 0 0 22px oklch(0.62 0.22 258 / 55%), 0 0 60px oklch(0.82 0.16 210 / 40%);
-  --chart-1: oklch(0.55 0.24 263);
-  --chart-2: oklch(0.82 0.16 210);
-  --chart-3: oklch(0.65 0.2 240);
-  --chart-4: oklch(0.45 0.2 270);
-  --chart-5: oklch(0.75 0.12 225);
+  --brand-mark: #ff5b3a; /* logo */
+  --background: #f7f5f0;               /* warm off-white */
+  --foreground: #10131a;
+  --card: #ffffff;
+  --card-foreground: #10131a;
+  --popover: #ffffff;
+  --popover-foreground: #10131a;
+  --primary: #ff5b3a;                  /* coral accent */
+  --primary-foreground: #ffffff;
+  --secondary: #ffe7e0;                /* coral tint (chips, selected items) */
+  --secondary-foreground: #10131a;
+  --muted: #efece5;
+  --muted-foreground: #5f6470;
+  --accent: #ffe7e0;
+  --accent-foreground: #10131a;
+  --destructive: #d92d20;
+  --border: #e5e0d6;
+  --input: #dcd6cb;
+  --ring: #ff5b3a;
+  --success: #1f8a70;                  /* "Done", "Booked by AI", Live */
+  --success-foreground: #ffffff;
+  --neon: #ff8a6b;                     /* lighter coral — gradient end, highlights */
+  --neon-foreground: #10131a;
+  --glow: 0 0 0 1px rgb(255 91 58 / 22%), 0 6px 18px rgb(255 91 58 / 22%);
+  --glow-strong: 0 0 0 1px rgb(255 91 58 / 40%), 0 8px 28px rgb(255 91 58 / 35%);
+  --chart-1: #ff5b3a;
+  --chart-2: #1f8a70;
+  --chart-3: #ff8a6b;
+  --chart-4: #10131a;
+  --chart-5: #ffc2b1;
   --radius: 0.625rem;
-  --sidebar: oklch(0.99 0.005 250);
-  --sidebar-foreground: oklch(0.2 0.04 265);
-  --sidebar-primary: oklch(0.55 0.24 263);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.95 0.035 250);
-  --sidebar-accent-foreground: oklch(0.3 0.12 263);
-  --sidebar-border: oklch(0.92 0.02 255);
-  --sidebar-ring: oklch(0.62 0.2 255);
+  --sidebar: #f7f5f0;
+  --sidebar-foreground: #10131a;
+  --sidebar-primary: #ff5b3a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ffe7e0;
+  --sidebar-accent-foreground: #10131a;
+  --sidebar-border: #e5e0d6;
+  --sidebar-ring: #ff5b3a;
 }
 
 .dark {
   color-scheme: dark; /* native selects, date/time pickers, checkboxes render dark */
-  --brand-mark: #5b9bff; /* lighter logo blue for contrast on dark */
-  --background: oklch(0.16 0.03 265);
-  --foreground: oklch(0.97 0.01 250);
-  --card: oklch(0.2 0.04 265);
-  --card-foreground: oklch(0.97 0.01 250);
-  --popover: oklch(0.2 0.04 265);
-  --popover-foreground: oklch(0.97 0.01 250);
-  --primary: oklch(0.65 0.22 258);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.26 0.05 265);
-  --secondary-foreground: oklch(0.97 0.01 250);
-  --muted: oklch(0.26 0.05 265);
-  --muted-foreground: oklch(0.72 0.03 255);
-  --accent: oklch(0.28 0.07 260);
-  --accent-foreground: oklch(0.97 0.01 250);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.7 0.18 230);
-  --neon: oklch(0.85 0.16 205);
-  --neon-foreground: oklch(0.16 0.03 265);
-  --glow: 0 0 0 1px oklch(0.7 0.2 250 / 35%), 0 0 20px oklch(0.7 0.2 250 / 45%), 0 0 48px oklch(0.85 0.16 205 / 30%);
-  --glow-strong: 0 0 0 1px oklch(0.7 0.2 250 / 55%), 0 0 26px oklch(0.7 0.2 250 / 65%), 0 0 70px oklch(0.85 0.16 205 / 45%);
-  --chart-1: oklch(0.65 0.22 258);
-  --chart-2: oklch(0.85 0.16 205);
-  --chart-3: oklch(0.72 0.18 240);
-  --chart-4: oklch(0.55 0.2 270);
-  --chart-5: oklch(0.8 0.12 225);
-  --sidebar: oklch(0.18 0.035 265);
-  --sidebar-foreground: oklch(0.97 0.01 250);
-  --sidebar-primary: oklch(0.65 0.22 258);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.26 0.05 265);
-  --sidebar-accent-foreground: oklch(0.97 0.01 250);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.7 0.18 230);
+  --brand-mark: #ff5b3a;
+  --background: #0e1117;
+  --foreground: #f7f5f0;
+  --card: #151923;                     /* lifted from #10131A so cards separate */
+  --card-foreground: #f7f5f0;
+  --popover: #151923;
+  --popover-foreground: #f7f5f0;
+  --primary: #ff5b3a;
+  --primary-foreground: #ffffff;
+  --secondary: #2a1c19;                /* dark coral tint */
+  --secondary-foreground: #f7f5f0;
+  --muted: #1b202b;
+  --muted-foreground: #9aa0ac;
+  --accent: #2a1c19;
+  --accent-foreground: #f7f5f0;
+  --destructive: #f97066;
+  --border: rgb(255 255 255 / 9%);
+  --input: rgb(255 255 255 / 14%);
+  --ring: #ff5b3a;
+  --success: #1f8a70;
+  --success-foreground: #ffffff;
+  --neon: #ff8a6b;
+  --neon-foreground: #0e1117;
+  --glow: 0 0 0 1px rgb(255 91 58 / 30%), 0 0 22px rgb(255 91 58 / 28%);
+  --glow-strong: 0 0 0 1px rgb(255 91 58 / 50%), 0 0 32px rgb(255 91 58 / 42%);
+  --chart-1: #ff5b3a;
+  --chart-2: #1f8a70;
+  --chart-3: #ff8a6b;
+  --chart-4: #f7f5f0;
+  --chart-5: #ffc2b1;
+  --sidebar: #0e1117;
+  --sidebar-foreground: #f7f5f0;
+  --sidebar-primary: #ff5b3a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #2a1c19;
+  --sidebar-accent-foreground: #f7f5f0;
+  --sidebar-border: rgb(255 255 255 / 9%);
+  --sidebar-ring: #ff5b3a;
 }
 
 @layer base {
@@ -146,10 +157,10 @@
 }
 
 /* =============================================================================
-   NEON UTILITIES
+   ACCENT UTILITIES (class names kept from the first theme; now coral)
    ============================================================================= */
 
-/* Soft blue/cyan glow around an element (buttons, logo, active states) */
+/* Soft coral glow around an element (buttons, logo, active states) */
 @utility neon-glow {
   box-shadow: var(--glow);
 }
@@ -158,30 +169,29 @@
   box-shadow: var(--glow-strong);
 }
 
-/* Glowing text for headings/accents */
+/* Accent-coloured headings */
 @utility neon-text {
   color: var(--primary);
-  text-shadow: 0 0 12px oklch(0.62 0.22 258 / 45%), 0 0 28px oklch(0.82 0.16 210 / 35%);
 }
 
-/* Blue → cyan gradient fill (logo mark, highlights) */
+/* Coral gradient fill (icon tiles, highlights) */
 @utility neon-gradient {
   background-image: linear-gradient(135deg, var(--primary), var(--neon));
 }
 
-/* Card with a thin glowing edge on hover */
+/* Card with a thin coral edge on hover */
 @utility neon-card {
   transition: box-shadow 200ms ease, border-color 200ms ease;
   &:hover {
-    border-color: oklch(0.62 0.2 255 / 45%);
+    border-color: rgb(255 91 58 / 40%);
     box-shadow: var(--glow);
   }
 }
 
-/* Auth / marketing backdrop: white with blue + cyan light blooms */
+/* Auth / marketing backdrop: warm background with soft coral + green light */
 @utility neon-backdrop {
   background-color: var(--background);
   background-image:
-    radial-gradient(40rem 28rem at 12% -10%, oklch(0.62 0.22 258 / 16%), transparent 70%),
-    radial-gradient(36rem 26rem at 95% 110%, oklch(0.82 0.16 210 / 20%), transparent 70%);
+    radial-gradient(40rem 28rem at 12% -10%, rgb(255 91 58 / 12%), transparent 70%),
+    radial-gradient(36rem 26rem at 95% 110%, rgb(31 138 112 / 10%), transparent 70%);
 }

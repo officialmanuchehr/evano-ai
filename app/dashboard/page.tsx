@@ -76,7 +76,7 @@ export default async function OverviewPage() {
   const upcomingBookings = upcomingBookingsResult.data ?? []
 
   const agentStatusColor =
-    agent?.status === 'active' ? 'bg-neon shadow-[0_0_8px_var(--neon)]' : agent?.status === 'paused' ? 'bg-yellow-500' : 'bg-muted-foreground'
+    agent?.status === 'active' ? 'bg-success' : agent?.status === 'paused' ? 'bg-yellow-500' : 'bg-muted-foreground'
 
   return (
     <div className="mx-auto max-w-5xl space-y-8 p-6 lg:p-8">

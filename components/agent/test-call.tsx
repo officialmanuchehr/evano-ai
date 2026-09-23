@@ -117,9 +117,9 @@ export function TestCall() {
           )}
 
           {status === 'live' && (
-            <p className="flex items-center gap-2 text-xs text-primary">
+            <p className="flex items-center gap-2 text-xs text-success">
               <span
-                className={`h-2 w-2 rounded-full bg-neon shadow-[0_0_8px_var(--neon)] ${speaking ? 'animate-pulse' : ''}`}
+                className={`h-2 w-2 rounded-full bg-success ${speaking ? 'animate-pulse' : ''}`}
               />
               {speaking ? a.speaking : a.listening}
             </p>

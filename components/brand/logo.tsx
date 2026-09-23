@@ -1,11 +1,11 @@
 import { cn } from '@/lib/utils'
 
 // =============================================================================
-// Evano AI brand — blue waveform (from public/brand/logo.png, #004AAD)
+// Evano AI brand — waveform mark (shape from public/brand/logo.png), coral #FF5B3A
 // Recreated as SVG so it stays crisp at every size. Same art as app/icon.svg.
 // =============================================================================
 
-export const BRAND_BLUE = '#004AAD' // light theme; dark theme uses a lighter blue via --brand-mark
+export const BRAND_CORAL = '#FF5B3A' // also set as --brand-mark in globals.css
 
 // Measured from the logo: five 101-wide, fully rounded bars in an 836×504 box,
 // centred vertically in a square 836×836 viewBox. [x, y, height]

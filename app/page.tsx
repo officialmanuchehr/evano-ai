@@ -101,8 +101,8 @@ export default async function HomePage() {
                     <p className="text-xs text-muted-foreground">{h.demo.answeredBy}</p>
                   </div>
                 </div>
-                <span className="flex items-center gap-1.5 text-xs font-medium text-primary">
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-neon shadow-[0_0_8px_var(--neon)]" />
+                <span className="flex items-center gap-1.5 text-xs font-medium text-success">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-success" />
                   {h.demo.live}
                 </span>
               </div>
@@ -116,7 +116,7 @@ export default async function HomePage() {
               </div>
 
               <div className="flex items-center gap-3 rounded-xl border bg-background px-3.5 py-3">
-                <CalendarCheck className="h-5 w-5 text-primary" />
+                <CalendarCheck className="h-5 w-5 text-success" />
                 <div className="text-sm">
                   <p className="font-medium">{h.demo.booked}</p>
                   <p className="text-xs text-muted-foreground">{h.demo.bookedWhen}</p>

@@ -70,7 +70,7 @@ export function GoogleCalendarCard({
             <h2 className="font-medium">{g.google}</h2>
             <p className="mt-0.5 text-sm text-muted-foreground">{g.googleText}</p>
             {status === 'connected' && (
-              <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-primary">
+              <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-success">
                 <Check className="h-4 w-4" /> {email ? interpolate(g.connectedAs, { email }) : g.connected}
               </p>
             )}

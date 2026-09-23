@@ -115,7 +115,7 @@ export default async function BookingsPage({ searchParams }: { searchParams: Sea
                       {b.customer_phone && <span className="tabular-nums">{b.customer_phone}</span>}
                       <span>{t.labels.bookingStatuses[b.status] ?? b.status}</span>
                       {b.created_by === 'ai' ? (
-                        <span className="inline-flex items-center gap-1 text-primary">
+                        <span className="inline-flex items-center gap-1 text-success">
                           <Bot className="h-3 w-3" /> {bk.bookedByAi}
                           {b.call_id && (
                             <Link href={`/dashboard/calls/${b.call_id}`} className="underline underline-offset-2">

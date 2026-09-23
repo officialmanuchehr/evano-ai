@@ -57,7 +57,9 @@ export default async function PhonePage() {
                 </p>
               </div>
             </div>
-            <Badge variant={live ? 'default' : 'secondary'}>{live ? p.live : p.paused}</Badge>
+            <Badge variant="secondary" className={live ? 'bg-success text-success-foreground' : undefined}>
+              {live ? p.live : p.paused}
+            </Badge>
           </div>
 
           <p className="text-sm text-muted-foreground">
