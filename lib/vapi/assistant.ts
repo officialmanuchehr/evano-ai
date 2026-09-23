@@ -139,6 +139,9 @@ export function buildAssistantPayload(src: AssistantSource, opts: { webhookUrl: 
     // Call events come back to the app (call logging is handled by the webhook)
     server: { url: opts.webhookUrl, headers: { 'x-evano-secret': opts.webhookSecret } },
     serverMessages: ['end-of-call-report', 'status-update'],
+    // Record calls; Vapi's own summary is off because Claude writes ours
+    artifactPlan: { recordingEnabled: true },
+    analysisPlan: { summaryPlan: { enabled: false } },
     // Lets the webhook map a call back to its organization — and lets us
     // verify ownership before updating an assistant
     metadata: { organizationId: org.id, agentId: agent.id, app: 'evano-ai' },

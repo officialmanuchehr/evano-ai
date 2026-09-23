@@ -1,6 +1,16 @@
 import { timingSafeEqual } from 'node:crypto'
-import { NextResponse } from 'next/server'
+import { after, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
+import {
+  recordEndOfCall,
+  recordStatusUpdate,
+  summarizeAndStore,
+  type EndOfCallReportMessage,
+  type StatusUpdateMessage,
+} from '@/lib/calls/record'
+
+// Leaves time for the Claude summary that runs after the response is sent
+export const maxDuration = 60
 
 // =============================================================================
 // Vapi server webhook — Vapi POSTs call events here.
@@ -8,11 +18,11 @@ import { createAdminClient } from '@/lib/supabase/server'
 // and phone number (x-evano-secret).
 // =============================================================================
 
-type VapiServerMessage = {
-  type: string
-  phoneNumber?: { id?: string }
-  call?: { id?: string; phoneNumberId?: string }
-}
+type VapiServerMessage =
+  | StatusUpdateMessage
+  | EndOfCallReportMessage
+  | { type: 'assistant-request'; phoneNumber?: { id?: string }; call?: { phoneNumberId?: string } }
+  | { type: string }
 
 function isAuthorized(request: Request): boolean {
   const expected = process.env.VOICE_PROVIDER_WEBHOOK_SECRET
@@ -35,9 +45,25 @@ export async function POST(request: Request) {
   }
 
   switch (message.type) {
+    // A call is ringing / in progress → show it on the dashboard immediately
+    case 'status-update': {
+      await recordStatusUpdate(message as StatusUpdateMessage)
+      return NextResponse.json({ received: true })
+    }
+
+    // Call finished → save transcript, recording, duration; summarise afterwards
+    case 'end-of-call-report': {
+      const saved = await recordEndOfCall(message as EndOfCallReportMessage)
+      if (saved) {
+        after(() => summarizeAndStore(saved.callRowId, saved.orgId, saved.transcript))
+      }
+      return NextResponse.json({ received: true, saved: Boolean(saved) })
+    }
+
     // Sent when a number has no assistant attached — i.e. the receptionist is paused
     case 'assistant-request': {
-      const vapiNumberId = message.phoneNumber?.id ?? message.call?.phoneNumberId
+      const m = message as { phoneNumber?: { id?: string }; call?: { phoneNumberId?: string } }
+      const vapiNumberId = m.phoneNumber?.id ?? m.call?.phoneNumberId
       const db = createAdminClient()
       const { data: phone } = vapiNumberId
         ? await db.from('phone_numbers').select('organization_id').eq('provider_number_id', vapiNumberId).maybeSingle()
@@ -52,7 +78,6 @@ export async function POST(request: Request) {
       })
     }
 
-    // Call logging (end-of-call-report, status-update) is handled in the next module
     default:
       return NextResponse.json({ received: true })
   }
