@@ -216,7 +216,8 @@ export async function resetPasswordAction(formData: FormData): Promise<ActionRes
 
   const supabase = await createClient()
   const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password`,
+    // Lands on /auth/confirm, which signs the user in for the reset, then forwards
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/confirm?next=/auth/reset-password`,
   })
 
   if (error) {
@@ -225,4 +226,43 @@ export async function resetPasswordAction(formData: FormData): Promise<ActionRes
   }
 
   return { success: true }
+}
+
+// =============================================================================
+// SET NEW PASSWORD (after following the reset link — user has a recovery session)
+// =============================================================================
+const newPasswordSchema = z
+  .object({
+    password: registerSchema.shape.password,
+    confirm: z.string(),
+  })
+  .refine((v) => v.password === v.confirm, { message: 'Passwords do not match', path: ['confirm'] })
+
+export async function updatePasswordAction(formData: FormData): Promise<ActionResult> {
+  const parsed = newPasswordSchema.safeParse({
+    password: formData.get('password') ?? '',
+    confirm: formData.get('confirm') ?? '',
+  })
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.errors[0].message }
+  }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return { success: false, error: 'Your reset link has expired. Please request a new one.' }
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: parsed.data.password })
+  if (error) {
+    console.error('[auth.updatePassword] error:', error.message)
+    const sameAsOld = error.message.toLowerCase().includes('different from the old')
+    return {
+      success: false,
+      error: sameAsOld ? 'Choose a password different from your current one.' : 'Could not update your password. Please try again.',
+    }
+  }
+
+  revalidatePath('/dashboard', 'layout')
+  redirect('/dashboard')
 }

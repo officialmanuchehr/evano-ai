@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -13,6 +13,13 @@ import { Loader2, CheckCircle } from 'lucide-react'
 export default function ForgotPasswordPage() {
   const [pending, setPending] = useState(false)
   const [sent, setSent] = useState(false)
+
+  // /auth/confirm sends people back here when a reset link is expired or reused
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('error') === 'link') {
+      toast.error('That reset link has expired or was already used. Request a new one below.')
+    }
+  }, [])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
