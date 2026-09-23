@@ -16,6 +16,7 @@ export const en = {
     unknownCaller: 'Unknown caller',
     somethingWrong: 'Something went wrong',
     language: 'Language',
+    interfaceLanguage: 'Interface language',
   },
 
   nav: {
@@ -432,6 +433,23 @@ export const en = {
       invalid: 'That connection attempt expired. Please try again.',
       error: 'Could not connect Google Calendar. Please try again.',
     } as Record<string, string>,
+  },
+
+  knowledge: {
+    title: 'Knowledge',
+    subtitle: 'What your receptionist knows. Changes are used on the very next call.',
+    servicesTitle: 'Services',
+    servicesText: 'What callers can book, with duration and price.',
+    faqsTitle: 'Frequently asked questions',
+    faqsText: 'Answers your receptionist gives. Switch one off to hide it without deleting it.',
+    active: 'Active',
+    saveServices: 'Save services',
+    saveFaqs: 'Save FAQs',
+    servicesSaved: 'Services saved',
+    faqsSaved: 'FAQs saved',
+    syncWarning: 'Saved — but the live receptionist could not be updated. It will pick this up on the next save.',
+    noServices: 'No services yet — add the first one.',
+    noFaqs: 'No questions yet — add the first one.',
   },
 
   // Messages returned by server actions

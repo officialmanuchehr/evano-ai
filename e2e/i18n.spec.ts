@@ -10,7 +10,7 @@ test('language switch changes the site to Russian and remembers it', async ({ pa
   await page.goto('/')
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Never miss a customer call again.')
 
-  await page.getByRole('group', { name: 'Language' }).first().getByRole('button', { name: 'ru' }).click()
+  await page.getByRole('group', { name: 'Interface language' }).first().getByRole('button', { name: 'ru' }).click()
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Больше ни одного пропущенного звонка')
   await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
 
@@ -19,7 +19,7 @@ test('language switch changes the site to Russian and remembers it', async ({ pa
   await expect(page.getByRole('heading', { name: 'С возвращением' })).toBeVisible()
 
   // …and back to English
-  await page.getByRole('group', { name: 'Язык' }).getByRole('button', { name: 'en' }).click()
+  await page.getByRole('group', { name: 'Язык интерфейса' }).getByRole('button', { name: 'en' }).click()
   await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible()
 })
 

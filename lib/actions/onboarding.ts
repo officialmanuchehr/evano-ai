@@ -8,6 +8,7 @@ import { TIMEZONES, INDUSTRIES } from '@/lib/onboarding/constants'
 import type { ActionResult } from '@/lib/actions/auth'
 import { defaultGreeting, isDefaultGreeting } from '@/lib/agent/constants'
 import { getI18n } from '@/lib/i18n/server'
+import { faqsSchema, parseJsonField, servicesSchema } from '@/lib/knowledge/schemas'
 import type { Dictionary } from '@/lib/i18n/dictionaries/en'
 
 // =============================================================================
@@ -180,33 +181,6 @@ export async function saveHoursAction(formData: FormData): Promise<ActionResult>
 // =============================================================================
 // STEP 3 — Services + FAQs, then finish onboarding
 // =============================================================================
-
-const servicesSchema = z
-  .array(
-    z.object({
-      name: z.string().trim().min(1).max(100),
-      duration: z.number().int().min(5).max(600).nullable(),
-      price: z.string().trim().max(40),
-    })
-  )
-  .max(50)
-
-const faqsSchema = z
-  .array(
-    z.object({
-      question: z.string().trim().min(3).max(300),
-      answer: z.string().trim().min(1).max(2000),
-    })
-  )
-  .max(50)
-
-function parseJsonField(formData: FormData, key: string): unknown {
-  try {
-    return JSON.parse(String(formData.get(key) ?? '[]'))
-  } catch {
-    return null
-  }
-}
 
 export async function completeOnboardingAction(formData: FormData): Promise<ActionResult> {
   const { t } = await getI18n()

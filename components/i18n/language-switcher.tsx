@@ -27,7 +27,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
   return (
     <div
       role="group"
-      aria-label={t.common.language}
+      aria-label={t.common.interfaceLanguage}
       className={cn('inline-flex items-center gap-1 rounded-lg border p-0.5 text-xs', pending && 'opacity-60', className)}
     >
       <Globe className="ml-1 h-3.5 w-3.5 text-muted-foreground" aria-hidden />

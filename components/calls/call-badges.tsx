@@ -8,9 +8,6 @@ import { useI18n } from '@/lib/i18n/client'
 // Values match public.calls; labels come from the current language.
 // =============================================================================
 
-export const CALL_STATUSES = ['completed', 'in_progress', 'transferred', 'missed', 'failed'] as const
-export const CALL_PURPOSES = ['booking', 'faq', 'cancellation', 'rescheduling', 'transfer', 'general', 'unknown'] as const
-
 const STATUS_STYLE: Record<string, string> = {
   completed: 'bg-secondary text-secondary-foreground',
   in_progress: 'bg-neon/20 text-primary',
@@ -33,9 +30,4 @@ export function PurposeLabel({ purpose }: { purpose: string | null }) {
   const { t } = useI18n()
   if (!purpose) return <span className="text-muted-foreground">—</span>
   return <span>{t.labels.callPurposes[purpose] ?? purpose}</span>
-}
-
-/** Summaries end with "Follow-up needed." when Claude flagged one. */
-export function needsFollowUp(summary: string | null) {
-  return Boolean(summary?.endsWith('Follow-up needed.'))
 }
