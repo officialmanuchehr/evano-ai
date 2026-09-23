@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 import {
   admin,
+  randomPassword,
   newTestUser,
   register,
   registerToOnboarding,
@@ -39,7 +40,7 @@ test('register rejects a weak password', async ({ page }) => {
 })
 
 test('login rejects wrong credentials', async ({ page }) => {
-  await login(page, 'nobody@evano-test.dev', 'Wrong-password-1')
+  await login(page, 'nobody@evano-test.dev', randomPassword())
   await expect(page.getByText('Incorrect email or password.')).toBeVisible()
 })
 
@@ -97,9 +98,9 @@ test('password reset link lets the user set a new password', async ({ page }) =>
   await expect(page).toHaveURL(/\/auth\/reset-password$/)
 
   // Mismatch is rejected and keeps the typed values
-  const newPassword = 'Brand-New-Pass-2026'
+  const newPassword = randomPassword()
   await page.getByLabel('New password', { exact: true }).fill(newPassword)
-  await page.getByLabel('Confirm new password').fill('Something-Else-1')
+  await page.getByLabel('Confirm new password').fill(randomPassword())
   await page.getByRole('button', { name: 'Save new password' }).click()
   await expect(page.getByText('Passwords do not match')).toBeVisible()
   await expect(page.getByLabel('New password', { exact: true })).toHaveValue(newPassword)

@@ -16,12 +16,17 @@ export type TestUser = { fullName: string; email: string; password: string }
 
 const createdEmails: string[] = []
 
+/** Random throwaway password (meets the app's rules) — never hard-code one in tests. */
+export function randomPassword() {
+  return `E2e-${crypto.randomUUID().replace(/-/g, '').slice(0, 16)}-9`
+}
+
 export function newTestUser(): TestUser {
   const id = `${Date.now()}${Math.random().toString(36).slice(2, 6)}`
   const user = {
     fullName: `E2E Tester ${id.slice(-4)}`,
     email: `e2e.${id}@evano-test.dev`,
-    password: 'Evano-e2e-2026',
+    password: randomPassword(),
   }
   createdEmails.push(user.email)
   return user

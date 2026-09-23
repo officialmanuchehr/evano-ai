@@ -6,6 +6,7 @@ import {
   completeOnboardingQuickly,
   getProfile,
   login,
+  randomPassword,
   cleanupTestUsers,
   vapiRequest,
 } from './helpers'
@@ -99,9 +100,9 @@ test('owner changes their name and password', async ({ page }) => {
   expect(profile?.full_name).toBe('Renamed Owner')
 
   // Password: mismatch rejected, then changed
-  const newPassword = 'Settings-New-2026'
+  const newPassword = randomPassword()
   await account.getByLabel('New password', { exact: true }).fill(newPassword)
-  await account.getByLabel('Confirm new password').fill('Different-2026')
+  await account.getByLabel('Confirm new password').fill(randomPassword())
   await account.getByRole('button', { name: 'Change password' }).click()
   await expect(page.getByText('Passwords do not match')).toBeVisible()
   await account.getByLabel('Confirm new password').fill(newPassword)
