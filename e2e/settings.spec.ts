@@ -54,15 +54,23 @@ test('owner updates business details and hours; the live receptionist follows', 
   await hours.getByLabel('Saturday opens').fill('10:00')
   await hours.getByLabel('Saturday closes').fill('14:00')
   await hours.getByRole('button', { name: 'Save changes' }).click()
-  await expect(page.getByText('Saved', { exact: true }).first()).toBeVisible({ timeout: 20_000 })
 
-  const { data: sat } = await admin
-    .from('business_hours')
-    .select('is_closed, open_time, close_time')
-    .eq('organization_id', organization_id)
-    .eq('day_of_week', 6)
-    .single()
-  expect(sat).toEqual({ is_closed: false, open_time: '10:00:00', close_time: '14:00:00' })
+  // Wait for the save itself (the earlier "Saved" toast may still be on screen)
+  await expect
+    .poll(
+      async () =>
+        (
+          await admin
+            .from('business_hours')
+            .select('is_closed, open_time, close_time')
+            .eq('organization_id', organization_id)
+            .eq('day_of_week', 6)
+            .single()
+        ).data,
+      { timeout: 20_000 }
+    )
+    .toEqual({ is_closed: false, open_time: '10:00:00', close_time: '14:00:00' })
+  await expect(hours.getByRole('button', { name: 'Save changes' })).toBeEnabled()
 
   // Live receptionist got both changes
   const live = await (await vapiRequest(`/assistant/${assistantId}`)).json()
@@ -92,7 +100,7 @@ test('owner changes their name and password', async ({ page }) => {
 
   // Password: mismatch rejected, then changed
   const newPassword = 'Settings-New-2026'
-  await account.getByLabel('New password').fill(newPassword)
+  await account.getByLabel('New password', { exact: true }).fill(newPassword)
   await account.getByLabel('Confirm new password').fill('Different-2026')
   await account.getByRole('button', { name: 'Change password' }).click()
   await expect(page.getByText('Passwords do not match')).toBeVisible()
