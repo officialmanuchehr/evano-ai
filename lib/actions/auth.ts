@@ -123,8 +123,8 @@ export async function registerAction(formData: FormData): Promise<ActionResult> 
     return { success: false, error: t.errors.setupFailed }
   }
 
-  // 4. Create default AI agent — speaks the language the owner signed up in
-  const agentLanguage = locale === 'ru' ? 'ru-RU' : 'en-US'
+  // 4. Create default AI agent — Russian sign-ups get the bilingual (Russian + English) receptionist
+  const agentLanguage = locale === 'ru' ? 'multi-ru-en' : 'en-US'
   await adminClient.from('ai_agents').insert({
     organization_id: org.id,
     name: t.onboarding.defaultAgentName,

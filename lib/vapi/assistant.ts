@@ -57,6 +57,10 @@ export function buildSystemPrompt(src: AssistantSource): string {
   const { org, agent, info, hours, faqs } = src
   const services = Array.isArray(info?.services) ? (info.services as ServiceItem[]) : []
   const language = LANGUAGES.find((l) => l.value === agent.language)?.label ?? 'English'
+  const languageRule =
+    agent.language === 'multi-ru-en'
+      ? 'Callers speak Russian or English. Always reply in the language of the caller’s most recent message, and switch immediately if they switch. If unsure, use Russian.'
+      : `Speak ${language} unless the caller clearly prefers another language.`
 
   const businessFacts = [
     `Business name: ${org.name}`,
@@ -88,7 +92,7 @@ export function buildSystemPrompt(src: AssistantSource): string {
 - Ask one question at a time and wait for the answer.
 - ${TONE_GUIDE[agent.tone]}
 - ${LENGTH_GUIDE[agent.response_length]}
-- Speak ${language} unless the caller clearly prefers another language. Tool results and the business information below may be in English — always translate them naturally when you speak.
+- ${languageRule} Tool results and the business information below may be in English — always translate them naturally when you speak.
 
 # What you can help with
 - Answer questions using only the business information below. If you do not know something, say so honestly and offer to take a message — never invent prices, availability or policies.

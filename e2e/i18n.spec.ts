@@ -71,10 +71,10 @@ test.describe('with a Russian browser', () => {
     const { data: agent } = await admin.from('ai_agents').select('name, language, greeting').eq('organization_id', organization_id).single()
     expect(agent).toEqual({
       name: 'ИИ-администратор',
-      language: 'ru-RU',
+      language: 'multi-ru-en',
       greeting: 'Здравствуйте! Вы позвонили в Бизнес Анна Иванова. Чем могу помочь?',
     })
     await page.locator('aside').getByRole('link', { name: 'ИИ-администратор' }).click()
-    await expect(page.getByLabel('Голос').locator('option')).toHaveText(['Svetlana (female)', 'Dariya (female)', 'Dmitry (male)'])
+    await expect(page.getByLabel('Голос').locator('option')).toHaveText(['Ava (female)', 'Emma (female)', 'Andrew (male)', 'Brian (male)'])
   })
 })

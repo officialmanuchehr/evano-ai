@@ -23,6 +23,8 @@ export const LANGUAGES = [
   { value: 'en-US', label: 'English (US)', transcriber: { model: 'nova-3', language: 'en-US' } },
   { value: 'en-GB', label: 'English (UK)', transcriber: { model: 'nova-3', language: 'en-GB' } },
   { value: 'ru-RU', label: 'Russian — Русский', transcriber: { model: 'nova-2', language: 'ru' } },
+  // Bilingual: understands Russian and English in the same call and answers in the caller's language
+  { value: 'multi-ru-en', label: 'Russian + English (auto) — Русский + английский', transcriber: { model: 'nova-3', language: 'multi' } },
   { value: 'tr-TR', label: 'Turkish', transcriber: { model: 'nova-2', language: 'tr' } },
   { value: 'de-DE', label: 'German', transcriber: { model: 'nova-2', language: 'de' } },
   { value: 'fr-FR', label: 'French', transcriber: { model: 'nova-2', language: 'fr' } },
@@ -53,6 +55,11 @@ const azure = (voiceId: string, label: string, language: LanguageCode): VoiceOpt
 
 export const VOICE_OPTIONS: readonly VoiceOption[] = [
   ...VAPI_ENGLISH,
+  // Multilingual neural voices — natural in both Russian and English
+  azure('en-US-AvaMultilingualNeural', 'Ava (female)', 'multi-ru-en'),
+  azure('en-US-EmmaMultilingualNeural', 'Emma (female)', 'multi-ru-en'),
+  azure('en-US-AndrewMultilingualNeural', 'Andrew (male)', 'multi-ru-en'),
+  azure('en-US-BrianMultilingualNeural', 'Brian (male)', 'multi-ru-en'),
   azure('ru-RU-SvetlanaNeural', 'Svetlana (female)', 'ru-RU'),
   azure('ru-RU-DariyaNeural', 'Dariya (female)', 'ru-RU'),
   azure('ru-RU-DmitryNeural', 'Dmitry (male)', 'ru-RU'),
@@ -86,6 +93,7 @@ const GREETINGS: Record<string, (business: string) => string> = {
   'en-US': (b) => `Thank you for calling ${b}. How can I help you today?`,
   'en-GB': (b) => `Thank you for calling ${b}. How can I help you today?`,
   'ru-RU': (b) => `Здравствуйте! Вы позвонили в ${b}. Чем могу помочь?`,
+  'multi-ru-en': (b) => `Здравствуйте! Вы позвонили в ${b}. Чем могу помочь?`,
   'tr-TR': (b) => `${b}'ı aradığınız için teşekkürler. Size nasıl yardımcı olabilirim?`,
   'de-DE': (b) => `Vielen Dank für Ihren Anruf bei ${b}. Wie kann ich Ihnen helfen?`,
   'fr-FR': (b) => `Merci d'avoir appelé ${b}. Comment puis-je vous aider ?`,
@@ -95,6 +103,7 @@ const GREETINGS: Record<string, (business: string) => string> = {
 
 const GOODBYES: Record<string, (business: string) => string> = {
   'ru-RU': (b) => `Спасибо, что позвонили в ${b}. До свидания!`,
+  'multi-ru-en': (b) => `Спасибо, что позвонили в ${b}. До свидания!`,
   'tr-TR': (b) => `${b}'ı aradığınız için teşekkürler. İyi günler!`,
   'de-DE': (b) => `Vielen Dank für Ihren Anruf bei ${b}. Auf Wiederhören!`,
   'fr-FR': (b) => `Merci d'avoir appelé ${b}. Au revoir !`,
