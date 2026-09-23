@@ -27,6 +27,7 @@ test('owner can update the receptionist settings', async ({ page }) => {
   // Edit every setting
   await page.getByLabel('Receptionist name').fill('Sofia')
   await page.getByLabel('Language').selectOption('ru-RU')
+  await page.getByLabel('Voice').selectOption('Elliot')
   await page.getByLabel('Greeting').fill('Hello, this is Sofia. How can I help you today?')
   await expect(page.getByText('Sofia says')).toBeVisible() // live preview follows the inputs
   await page.getByText('Friendly', { exact: true }).click()
@@ -39,18 +40,20 @@ test('owner can update the receptionist settings', async ({ page }) => {
   await page.reload()
   await expect(page.getByLabel('Receptionist name')).toHaveValue('Sofia')
   await expect(page.getByLabel('Language')).toHaveValue('ru-RU')
+  await expect(page.getByLabel('Voice')).toHaveValue('Elliot')
   await expect(page.getByLabel('Custom instructions')).toHaveValue('Always ask for the caller name first.')
 
   // And in the database
   const { organization_id } = await getProfile(user.email)
   const { data: agent } = await admin
     .from('ai_agents')
-    .select('name, language, greeting, tone, response_length, system_prompt, status')
+    .select('name, language, voice_id, greeting, tone, response_length, system_prompt, status')
     .eq('organization_id', organization_id)
     .single()
   expect(agent).toEqual({
     name: 'Sofia',
     language: 'ru-RU',
+    voice_id: 'Elliot',
     greeting: 'Hello, this is Sofia. How can I help you today?',
     tone: 'friendly',
     response_length: 'short',

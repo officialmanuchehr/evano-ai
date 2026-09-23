@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { updateAgentAction } from '@/lib/actions/agent'
-import { LANGUAGES, LIMITS, RESPONSE_LENGTHS, TONES, type ResponseLength, type Tone } from '@/lib/agent/constants'
+import { LANGUAGES, LIMITS, RESPONSE_LENGTHS, TONES, VOICES, type ResponseLength, type Tone } from '@/lib/agent/constants'
 import { selectClassName } from '@/lib/onboarding/constants'
 
 export type AgentFormValues = {
@@ -18,6 +18,7 @@ export type AgentFormValues = {
   tone: Tone
   response_length: ResponseLength
   language: string
+  voice_id: string
   system_prompt: string
 }
 
@@ -55,7 +56,7 @@ export function AgentForm({ initial }: { initial: AgentFormValues }) {
           <p className="text-sm text-muted-foreground">How your receptionist introduces itself.</p>
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="name">Receptionist name</Label>
             <Input id="name" name="name" value={name} onChange={(e) => setName(e.target.value)} required disabled={pending} />
@@ -66,6 +67,16 @@ export function AgentForm({ initial }: { initial: AgentFormValues }) {
               {LANGUAGES.map((l) => (
                 <option key={l.value} value={l.value}>
                   {l.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="voice_id">Voice</Label>
+            <select id="voice_id" name="voice_id" defaultValue={initial.voice_id} disabled={pending} className={selectClassName}>
+              {VOICES.map((v) => (
+                <option key={v} value={v}>
+                  {v}
                 </option>
               ))}
             </select>

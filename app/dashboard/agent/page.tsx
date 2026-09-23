@@ -4,13 +4,15 @@ import { Bot, Clock, HelpCircle, Moon, Sparkles } from 'lucide-react'
 import { createClient, getAuthenticatedUser } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/badge'
 import { AgentForm } from '@/components/agent/agent-form'
+import { LiveToggle } from '@/components/agent/live-toggle'
+import { TestCall } from '@/components/agent/test-call'
 import { WEEK_DAYS, AFTER_HOURS_OPTIONS, type ServiceItem } from '@/lib/onboarding/constants'
-import type { ResponseLength, Tone } from '@/lib/agent/constants'
+import { DEFAULT_VOICE, type ResponseLength, type Tone } from '@/lib/agent/constants'
 
 export const metadata: Metadata = { title: 'AI Receptionist' }
 
 const STATUS_COPY = {
-  draft: { label: 'Draft', note: 'Not answering calls yet — a phone number still needs to be connected.' },
+  draft: { label: 'Draft', note: 'Not answering calls yet — connect a phone number to go live.' },
   active: { label: 'Live', note: 'Answering calls on your connected number.' },
   paused: { label: 'Paused', note: 'Calls are not being answered by AI right now.' },
 } as const
@@ -25,10 +27,10 @@ export default async function AgentPage() {
   const orgId = auth.profile.organization_id
   const supabase = await createClient()
 
-  const [{ data: agent }, { data: hours }, { data: info }, { count: faqCount }] = await Promise.all([
+  const [{ data: agent }, { data: hours }, { data: info }, { count: faqCount }, { data: phone }] = await Promise.all([
     supabase
       .from('ai_agents')
-      .select('name, greeting, tone, response_length, language, system_prompt, status')
+      .select('name, greeting, tone, response_length, language, voice_id, system_prompt, status')
       .eq('organization_id', orgId)
       .single(),
     supabase
@@ -41,6 +43,7 @@ export default async function AgentPage() {
       .eq('organization_id', orgId)
       .maybeSingle(),
     supabase.from('faqs').select('id', { count: 'exact', head: true }).eq('organization_id', orgId).eq('is_active', true),
+    supabase.from('phone_numbers').select('phone_number').eq('organization_id', orgId).maybeSingle(),
   ])
 
   if (!agent) {
@@ -80,6 +83,7 @@ export default async function AgentPage() {
             tone: agent.tone as Tone,
             response_length: agent.response_length as ResponseLength,
             language: agent.language,
+            voice_id: agent.voice_id ?? DEFAULT_VOICE,
             system_prompt: agent.system_prompt ?? '',
           }}
         />
@@ -91,8 +95,11 @@ export default async function AgentPage() {
               <Bot className="h-4 w-4 text-primary" />
               <h2 className="text-sm font-medium">Status</h2>
             </div>
-            <p className="text-sm text-muted-foreground">{status.note}</p>
+            <p className="mb-3 text-sm text-muted-foreground">{status.note}</p>
+            <LiveToggle status={agent.status} phoneNumber={phone?.phone_number ?? null} />
           </div>
+
+          <TestCall />
 
           <div className="space-y-4 rounded-xl border bg-card p-5">
             <div className="flex items-center gap-2">

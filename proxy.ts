@@ -36,7 +36,9 @@ export async function proxy(request: NextRequest) {
   // Public paths that don't require auth
   const publicPaths = ['/', '/pricing', '/demo']
   const authPaths = ['/auth/login', '/auth/register', '/auth/forgot-password']
-  const isPublicPath = publicPaths.includes(pathname)
+  // Webhooks authenticate themselves (shared secret) — never redirect them to login
+  const isWebhook = pathname.startsWith('/api/vapi/')
+  const isPublicPath = publicPaths.includes(pathname) || isWebhook
   const isAuthPath = authPaths.some((p) => pathname.startsWith(p))
 
   // Unauthenticated users trying to access protected routes → redirect to login

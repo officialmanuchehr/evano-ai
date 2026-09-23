@@ -70,7 +70,18 @@ export async function getProfile(email: string) {
   return data!
 }
 
-/** Delete every account created via newTestUser() (org delete cascades to its data). */
+/** Call the Vapi REST API with the private key (test cleanup / verification only). */
+export async function vapiRequest(path: string, init: RequestInit = {}) {
+  return fetch(`https://api.vapi.ai${path}`, {
+    ...init,
+    headers: { Authorization: `Bearer ${process.env.VOICE_PROVIDER_API_KEY}`, 'Content-Type': 'application/json' },
+  })
+}
+
+/**
+ * Delete every account created via newTestUser() — including any Vapi assistant
+ * or phone number it created — then the org (cascades to all its data).
+ */
 export async function cleanupTestUsers() {
   while (createdEmails.length) {
     const email = createdEmails.pop()!
@@ -81,8 +92,16 @@ export async function cleanupTestUsers() {
       .maybeSingle()
 
     if (profile) {
+      const orgId = profile.organization_id
+      const [{ data: agent }, { data: phone }] = await Promise.all([
+        admin.from('ai_agents').select('provider_agent_id').eq('organization_id', orgId).maybeSingle(),
+        admin.from('phone_numbers').select('provider_number_id').eq('organization_id', orgId).maybeSingle(),
+      ])
+      if (phone?.provider_number_id) await vapiRequest(`/phone-number/${phone.provider_number_id}`, { method: 'DELETE' })
+      if (agent?.provider_agent_id) await vapiRequest(`/assistant/${agent.provider_agent_id}`, { method: 'DELETE' })
+
       await admin.auth.admin.deleteUser(profile.id)
-      await admin.from('organizations').delete().eq('id', profile.organization_id)
+      await admin.from('organizations').delete().eq('id', orgId)
     }
   }
 }
