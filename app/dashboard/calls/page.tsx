@@ -128,7 +128,7 @@ export default async function CallsPage({ searchParams }: { searchParams: Search
                       {formatDateTime(call.started_at ?? call.created_at, timeZone)} · {formatDuration(call.duration_seconds)}
                     </p>
                   </div>
-                  <p className="col-span-2 row-start-2 line-clamp-2 text-sm text-muted-foreground sm:col-span-1 sm:row-start-1">
+                  <p className="col-span-2 row-start-2 line-clamp-2 text-sm text-muted-foreground sm:col-span-1 sm:col-start-2 sm:row-start-1">
                     {needsFollowUp(call.summary) && (
                       <Flag className="mr-1 inline h-3.5 w-3.5 -translate-y-px text-primary" aria-label="Follow-up needed" />
                     )}
