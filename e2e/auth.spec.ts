@@ -90,8 +90,9 @@ test('register, see dashboard, sign out, sign back in', async ({ page }) => {
   const orgName = `${user.fullName}'s Business`
 
   // 1. Register → redirected to onboarding (page not built yet, URL is enough)
+  // Signup makes several sequential DB writes — allow for production cold starts
   await register(page, user)
-  await expect(page).toHaveURL(/\/onboarding\/business/)
+  await expect(page).toHaveURL(/\/onboarding\/business/, { timeout: 20_000 })
 
   // 2. Dashboard shows the org seeded during signup
   await page.goto('/dashboard')
@@ -115,6 +116,6 @@ test('register, see dashboard, sign out, sign back in', async ({ page }) => {
 
   // 5. Sign back in with the same credentials
   await login(page, user.email, user.password)
-  await expect(page).toHaveURL(/\/dashboard$/)
+  await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15_000 })
   await expect(sidebar.getByText(orgName)).toBeVisible()
 })
