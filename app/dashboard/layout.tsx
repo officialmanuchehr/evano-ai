@@ -14,6 +14,11 @@ export default async function DashboardLayout({
   }
 
   const { profile } = auth
+
+  // New accounts must finish the setup wizard before using the dashboard
+  if (!profile.onboarding_completed) {
+    redirect('/onboarding/business')
+  }
   const orgName = profile.organizations?.name ?? 'My Business'
   const userInitial = (profile.full_name ?? profile.email ?? 'U')[0].toUpperCase()
 
