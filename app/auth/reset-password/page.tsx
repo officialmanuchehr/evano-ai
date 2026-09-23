@@ -25,7 +25,7 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen flex items-center justify-center neon-backdrop px-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center space-y-2">
-          <BrandMark size="lg" />
+          <BrandMark size="lg" className="mx-auto" />
           <h1 className="text-2xl font-semibold tracking-tight">Choose a new password</h1>
           <p className="text-sm text-muted-foreground">You’ll be signed in once it’s saved.</p>
         </div>

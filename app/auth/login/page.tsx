@@ -33,7 +33,7 @@ function LoginForm() {
       <div className="w-full max-w-sm space-y-6">
         {/* Logo */}
         <div className="text-center space-y-2">
-          <BrandMark size="lg" />
+          <BrandMark size="lg" className="mx-auto" />
           <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
           <p className="text-sm text-muted-foreground">Sign in to your account.</p>
         </div>
