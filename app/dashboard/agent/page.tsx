@@ -145,7 +145,10 @@ export default async function AgentPage() {
             {afterHours && (
               <p className="flex items-start gap-1.5 text-sm">
                 <Moon className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
-                <span>After hours: {afterHours.label.charAt(0).toLowerCase() + afterHours.label.slice(1)}</span>
+                <span>
+                  <span className="text-muted-foreground">After hours: </span>
+                  {afterHours.label}
+                </span>
               </p>
             )}
           </div>
