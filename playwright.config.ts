@@ -4,8 +4,9 @@ import { config as loadEnv } from 'dotenv'
 // Tests talk to the real Supabase project (for cleanup), so load .env.local
 loadEnv({ path: '.env.local' })
 
-// 127.0.0.1 (not localhost): avoids stale localhost cookies from other projects
-const baseURL = process.env.E2E_BASE_URL ?? 'http://127.0.0.1:3000'
+// Tests run against the deployed Vercel app by default.
+// Override with E2E_BASE_URL (e.g. a preview deployment URL).
+const baseURL = process.env.E2E_BASE_URL ?? 'https://evano-ai-kappa.vercel.app'
 
 export default defineConfig({
   testDir: './e2e',
@@ -20,13 +21,4 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-  // Reuse `npm run dev` if it's already running, otherwise start it
-  webServer: process.env.E2E_BASE_URL
-    ? undefined
-    : {
-        command: 'npm run dev',
-        url: baseURL,
-        reuseExistingServer: true,
-        timeout: 120_000,
-      },
 })
