@@ -1,29 +1,28 @@
 import { cn } from '@/lib/utils'
 
 // =============================================================================
-// Evano AI brand — indigo waveform tile (from public/brand/evano-logo.png)
+// Evano AI brand — blue waveform (from public/brand/logo.png, #004AAD)
 // Recreated as SVG so it stays crisp at every size. Same art as app/icon.svg.
 // =============================================================================
 
-const BRAND_INDIGO = '#1800AD'
+export const BRAND_BLUE = '#004AAD'
 
-// Bar geometry in a 724×724 tile: [x, y, height] — all bars are 52 wide, fully rounded
+// Measured from the logo: five 101-wide, fully rounded bars in an 836×504 box,
+// centred vertically in a square 836×836 viewBox. [x, y, height]
 const BARS = [
-  [103, 277, 170],
-  [181, 237, 250],
-  [258, 177, 370],
-  [336, 78, 568],
-  [414, 177, 370],
-  [491, 237, 250],
-  [569, 277, 170],
+  [0, 367, 102],
+  [183, 270, 296],
+  [367, 166, 504],
+  [550, 270, 296],
+  [733, 367, 102],
 ] as const
 
 const sizes = {
-  sm: 'h-7 w-7 rounded-lg',
-  lg: 'h-10 w-10 rounded-xl',
+  sm: 'h-7 w-7',
+  lg: 'h-10 w-10',
 } as const
 
-/** Square waveform icon with a neon glow. */
+/** Waveform icon with a soft blue glow. */
 export function BrandMark({
   size = 'sm',
   className,
@@ -33,14 +32,13 @@ export function BrandMark({
 }) {
   return (
     <svg
-      viewBox="0 0 724 724"
+      viewBox="0 0 836 836"
       aria-hidden
-      className={cn('neon-glow flex-shrink-0', sizes[size], className)}
+      className={cn('flex-shrink-0 drop-shadow-[0_0_6px_rgb(0_74_173/0.35)]', sizes[size], className)}
     >
-      <rect width="724" height="724" rx="120" fill={BRAND_INDIGO} />
-      <g fill="#fff">
+      <g fill={BRAND_BLUE}>
         {BARS.map(([x, y, h]) => (
-          <rect key={x} x={x} y={y} width="52" height={h} rx="26" />
+          <rect key={x} x={x} y={y} width="101" height={h} rx="50.5" />
         ))}
       </g>
     </svg>
@@ -54,11 +52,11 @@ export function BrandLogo({ size = 'sm', className }: { size?: keyof typeof size
       <BrandMark size={size} />
       <span
         className={cn(
-          'font-extrabold uppercase tracking-tight text-foreground',
-          size === 'lg' ? 'text-xl' : 'text-base'
+          'font-semibold uppercase tracking-[0.12em] text-foreground',
+          size === 'lg' ? 'text-xl' : 'text-[0.95rem]'
         )}
       >
-        Evano<span className="text-primary">.</span>AI
+        Evano.AI
       </span>
     </span>
   )
