@@ -56,10 +56,6 @@ export default async function HomePage() {
       <section className="neon-backdrop">
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:py-24">
           <div className="space-y-6">
-            <span className="inline-flex items-center gap-2 rounded-full border bg-background/80 px-3 py-1 text-xs font-medium text-primary">
-              <span className="h-1.5 w-1.5 rounded-full bg-neon shadow-[0_0_8px_var(--neon)]" />
-              {h.badge}
-            </span>
             <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
               {h.heroBefore}{' '}
               <span className="bg-linear-to-r from-primary to-neon bg-clip-text text-transparent">{h.heroHighlight}</span>{' '}

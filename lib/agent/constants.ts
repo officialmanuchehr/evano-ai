@@ -19,20 +19,25 @@ export const RESPONSE_LENGTHS = [
 
 // Speech recognition (Deepgram) per language. English uses Nova-3; the others
 // use Nova-2, which has long-standing support for these languages.
-export const LANGUAGES = [
+// The bilingual option uses Flux Multilingual limited to Russian + English —
+// in a side-by-side test (2026-09-23) Nova-3 "multi" drifted into Portuguese and
+// Hindi on noise, while Flux kept clean RU/EN turns.
+type Transcriber = { model: string; language?: string; languages?: string[] }
+
+export const LANGUAGES: readonly { value: string; label: string; transcriber: Transcriber }[] = [
   { value: 'en-US', label: 'English (US)', transcriber: { model: 'nova-3', language: 'en-US' } },
   { value: 'en-GB', label: 'English (UK)', transcriber: { model: 'nova-3', language: 'en-GB' } },
   { value: 'ru-RU', label: 'Russian — Русский', transcriber: { model: 'nova-2', language: 'ru' } },
   // Bilingual: understands Russian and English in the same call and answers in the caller's language
-  { value: 'multi-ru-en', label: 'Russian + English (auto) — Русский + английский', transcriber: { model: 'nova-3', language: 'multi' } },
+  { value: 'multi-ru-en', label: 'Russian + English (auto) — Русский + английский', transcriber: { model: 'flux-general-multi', languages: ['ru', 'en'] } },
   { value: 'tr-TR', label: 'Turkish', transcriber: { model: 'nova-2', language: 'tr' } },
   { value: 'de-DE', label: 'German', transcriber: { model: 'nova-2', language: 'de' } },
   { value: 'fr-FR', label: 'French', transcriber: { model: 'nova-2', language: 'fr' } },
   { value: 'es-ES', label: 'Spanish', transcriber: { model: 'nova-2', language: 'es' } },
   { value: 'ar-SA', label: 'Arabic', transcriber: { model: 'nova-3', language: 'ar' } },
-] as const
+]
 
-export type LanguageCode = (typeof LANGUAGES)[number]['value']
+export type LanguageCode = 'en-US' | 'en-GB' | 'ru-RU' | 'multi-ru-en' | 'tr-TR' | 'de-DE' | 'fr-FR' | 'es-ES' | 'ar-SA'
 
 // ------------------------------------------------------------------ voices
 

@@ -259,3 +259,39 @@ export async function cancelBooking(orgId: string, bookingId: string) {
   if (data.external_booking_id) await deleteEvent(orgId, data.external_booking_id)
   return true
 }
+
+/**
+ * Copy upcoming active bookings that have no calendar event yet into Google
+ * Calendar (e.g. bookings made while the calendar was unreachable).
+ * Returns how many events were created.
+ */
+export async function syncMissingCalendarEvents(orgId: string): Promise<number> {
+  const db = createAdminClient()
+  const { timeZone } = await loadOrgContext(orgId)
+  const { data: bookings } = await db
+    .from('bookings')
+    .select('id, customer_name, customer_phone, service, notes, start_time, end_time, created_by')
+    .eq('organization_id', orgId)
+    .in('status', [...ACTIVE_STATUSES])
+    .is('external_booking_id', null)
+    .gte('end_time', new Date().toISOString())
+    .limit(50)
+
+  let created = 0
+  for (const b of bookings ?? []) {
+    const eventId = await createEvent(orgId, {
+      customerName: b.customer_name ?? 'Customer',
+      customerPhone: b.customer_phone,
+      service: b.service,
+      notes: b.notes,
+      start: new Date(b.start_time),
+      end: new Date(b.end_time),
+      timeZone,
+      createdBy: b.created_by === 'ai' ? 'ai' : 'human',
+    })
+    if (!eventId) break // calendar still unreachable — the card shows the error
+    await db.from('bookings').update({ external_provider: 'google_calendar', external_booking_id: eventId }).eq('id', b.id)
+    created++
+  }
+  return created
+}

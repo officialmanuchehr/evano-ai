@@ -23,7 +23,7 @@ export default async function IntegrationsPage({ searchParams }: { searchParams:
   // Admin client, explicit columns: the encrypted token never leaves the server
   const { data: google } = await createAdminClient()
     .from('integrations')
-    .select('status, provider_account_id')
+    .select('status, provider_account_id, metadata')
     .eq('organization_id', auth.profile.organization_id)
     .eq('provider', 'google_calendar')
     .maybeSingle()
@@ -38,6 +38,7 @@ export default async function IntegrationsPage({ searchParams }: { searchParams:
       <GoogleCalendarCard
         status={google?.status === 'connected' || google?.status === 'error' ? google.status : null}
         email={google?.provider_account_id ?? null}
+        lastError={((google?.metadata ?? {}) as { lastError?: string | null }).lastError ?? null}
         result={typeof googleResult === 'string' ? googleResult : null}
       />
     </div>

@@ -147,14 +147,37 @@ async function accessToken(orgId: string): Promise<string | null> {
   }
 }
 
+/**
+ * Remember whether the last Calendar API call worked, so the Integrations page
+ * can show the real error (e.g. "Calendar API disabled") instead of failing silently.
+ */
+async function recordSyncHealth(orgId: string, error: string | null) {
+  const db = createAdminClient()
+  const { data } = await db.from('integrations').select('metadata').eq('organization_id', orgId).eq('provider', PROVIDER).maybeSingle()
+  const metadata = (data?.metadata ?? {}) as Record<string, unknown>
+  if ((metadata.lastError ?? null) === error) return // nothing changed — skip the write
+  await db
+    .from('integrations')
+    .update({ metadata: { ...metadata, lastError: error, lastErrorAt: error ? new Date().toISOString() : null } })
+    .eq('organization_id', orgId)
+    .eq('provider', PROVIDER)
+}
+
 async function calendarFetch(orgId: string, path: string, init: RequestInit = {}) {
   const token = await accessToken(orgId)
   if (!token) return null
-  return fetch(`${CALENDAR_API}${path}`, {
+  const res = await fetch(`${CALENDAR_API}${path}`, {
     ...init,
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...init.headers },
     cache: 'no-store',
   })
+  if (res.ok || res.status === 404 || res.status === 410) {
+    await recordSyncHealth(orgId, null)
+  } else {
+    const body = (await res.clone().json().catch(() => null)) as { error?: { message?: string } } | null
+    await recordSyncHealth(orgId, `${res.status}: ${body?.error?.message ?? res.statusText}`.slice(0, 300))
+  }
+  return res
 }
 
 /** Busy intervals in the connected calendar (empty when not connected or on error). */

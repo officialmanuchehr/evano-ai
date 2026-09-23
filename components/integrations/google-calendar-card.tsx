@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { CalendarDays, Check, Loader2, AlertTriangle } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
-import { disconnectGoogleCalendarAction } from '@/lib/actions/integrations'
+import { disconnectGoogleCalendarAction, syncGoogleCalendarAction } from '@/lib/actions/integrations'
 import { cn } from '@/lib/utils'
 import { interpolate } from '@/lib/i18n/config'
 import { useI18n } from '@/lib/i18n/client'
@@ -17,10 +17,12 @@ export function GoogleCalendarCard({
   status,
   email,
   result,
+  lastError,
 }: {
   status: 'connected' | 'error' | null
   email: string | null
   result: string | null
+  lastError?: string | null
 }) {
   const router = useRouter()
   const { t } = useI18n()
@@ -45,6 +47,15 @@ export function GoogleCalendarCard({
     })
   }
 
+  function syncNow() {
+    startTransition(async () => {
+      const res = await syncGoogleCalendarAction()
+      if (res.success) toast.success(interpolate(g.synced, { count: res.created ?? 0 }))
+      else toast.error(res.error ?? t.common.somethingWrong)
+      router.refresh()
+    })
+  }
+
   // Full-page navigation: the connect route redirects to Google
   const connectHref = '/api/integrations/google-calendar/connect'
 
@@ -63,6 +74,14 @@ export function GoogleCalendarCard({
                 <Check className="h-4 w-4" /> {email ? interpolate(g.connectedAs, { email }) : g.connected}
               </p>
             )}
+            {status === 'connected' && lastError && (
+              <p className="mt-2 flex items-start gap-1.5 text-sm text-destructive">
+                <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                <span>
+                  {g.syncFailed} <span className="break-words text-muted-foreground">{lastError}</span>
+                </span>
+              </p>
+            )}
             {status === 'error' && (
               <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-destructive">
                 <AlertTriangle className="h-4 w-4" /> {g.expired}
@@ -73,10 +92,15 @@ export function GoogleCalendarCard({
 
         <div className="flex gap-2">
           {status === 'connected' ? (
-            <Button type="button" variant="outline" onClick={disconnect} disabled={pending}>
-              {pending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
-              {g.disconnect}
-            </Button>
+            <>
+              <Button type="button" variant="outline" onClick={syncNow} disabled={pending}>
+                {pending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
+                {g.syncNow}
+              </Button>
+              <Button type="button" variant="ghost" onClick={disconnect} disabled={pending}>
+                {g.disconnect}
+              </Button>
+            </>
           ) : (
             <a href={connectHref} className={cn(buttonVariants(), 'neon-glow hover:neon-glow-strong')}>
               {status === 'error' ? g.reconnect : g.connect}

@@ -11,12 +11,26 @@ import { resolveOwner } from '@/lib/calls/record'
 // CreateFunctionToolDTO / ServerMessageToolCalls / ToolCallResult schemas.
 // =============================================================================
 
-export function bookingTools(server: { url: string; headers: Record<string, string> }) {
+// What the receptionist says while checking availability. The bilingual receptionist
+// gets no fixed phrase (it can't know the caller's language in advance).
+const CHECKING_PHRASE: Record<string, string> = {
+  'en-US': 'One moment, let me check that for you.',
+  'en-GB': 'One moment, let me check that for you.',
+  'ru-RU': 'Минутку, сейчас проверю.',
+  'tr-TR': 'Bir dakika, kontrol ediyorum.',
+  'de-DE': 'Einen Moment, ich schaue nach.',
+  'fr-FR': 'Un instant, je vérifie.',
+  'es-ES': 'Un momento, lo compruebo.',
+  'ar-SA': 'لحظة من فضلك، سأتحقق من ذلك.',
+}
+
+export function bookingTools(server: { url: string; headers: Record<string, string> }, language = 'en-US') {
+  const phrase = CHECKING_PHRASE[language]
   return [
     {
       type: 'function',
       server,
-      messages: [{ type: 'request-start', content: 'One moment, let me check that for you.' }],
+      ...(phrase ? { messages: [{ type: 'request-start', content: phrase }] } : {}),
       function: {
         name: 'check_availability',
         description:

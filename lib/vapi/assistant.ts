@@ -59,7 +59,7 @@ export function buildSystemPrompt(src: AssistantSource): string {
   const language = LANGUAGES.find((l) => l.value === agent.language)?.label ?? 'English'
   const languageRule =
     agent.language === 'multi-ru-en'
-      ? 'Callers speak Russian or English. Always reply in the language of the caller’s most recent message, and switch immediately if they switch. If unsure, use Russian.'
+      ? 'Callers speak Russian or English. Reply in the language of the caller’s most recent message and switch the moment they switch — silently: never mention, announce or ask about the language. Never mix Russian and English in one reply. If unsure, use Russian.'
       : `Speak ${language} unless the caller clearly prefers another language.`
 
   const businessFacts = [
@@ -90,6 +90,8 @@ export function buildSystemPrompt(src: AssistantSource): string {
 - This is a voice conversation: talk in short, natural spoken sentences. Never use lists, bullet points, markdown, emojis or special characters.
 - Say times, prices and phone numbers the way a person would say them out loud.
 - Ask one question at a time and wait for the answer.
+- If you did not clearly understand the caller (garbled or unclear words), politely ask them to repeat — never guess or answer something they did not ask.
+- Do not repeat information you already gave, and never read out the whole business description unprompted.
 - ${TONE_GUIDE[agent.tone]}
 - ${LENGTH_GUIDE[agent.response_length]}
 - ${languageRule} Tool results and the business information below may be in English — always translate them naturally when you speak.
@@ -136,10 +138,13 @@ export function buildAssistantPayload(src: AssistantSource, opts: { webhookUrl: 
       temperature: 0.4,
       maxTokens: MAX_TOKENS_BY_LENGTH[agent.response_length],
       messages: [{ role: 'system', content: buildSystemPrompt(src) }],
-      tools: bookingTools({ url: opts.webhookUrl, headers: { 'x-evano-secret': opts.webhookSecret } }),
+      tools: bookingTools({ url: opts.webhookUrl, headers: { 'x-evano-secret': opts.webhookSecret } }, agent.language),
     },
     voice: { provider: voice.provider, voiceId: voice.voiceId },
-    transcriber: { provider: 'deepgram', model: transcriber.model, language: transcriber.language },
+    transcriber: { provider: 'deepgram', ...transcriber },
+    // Turn-taking: don't let a cough, "uh-huh" or background noise cut the receptionist off
+    stopSpeakingPlan: { numWords: 2, voiceSeconds: 0.3, backoffSeconds: 1 },
+    backgroundSpeechDenoisingPlan: { smartDenoisingPlan: { enabled: true } },
     endCallMessage: goodbyeMessage(agent.language, org.name),
     maxDurationSeconds: 900,
     // Call events come back to the app (call logging is handled by the webhook)

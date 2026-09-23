@@ -44,7 +44,6 @@ export const en = {
   home: {
     signIn: 'Sign in',
     getStarted: 'Get started',
-    badge: 'AI receptionist for small businesses',
     heroBefore: 'Never miss a',
     heroHighlight: 'customer call',
     heroAfter: 'again.',
@@ -427,6 +426,9 @@ export const en = {
     connectedAs: 'Connected as {email}',
     connected: 'Connected',
     expired: 'Access expired — reconnect to keep syncing',
+    syncFailed: 'Last calendar sync failed:',
+    syncNow: 'Sync now',
+    synced: 'Calendar checked — {count} booking(s) added to your calendar',
     connect: 'Connect Google Calendar',
     reconnect: 'Reconnect',
     disconnect: 'Disconnect',

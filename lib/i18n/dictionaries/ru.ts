@@ -45,7 +45,6 @@ export const ru: Dictionary = {
   home: {
     signIn: 'Войти',
     getStarted: 'Начать',
-    badge: 'ИИ-администратор для малого бизнеса',
     heroBefore: 'Больше ни одного',
     heroHighlight: 'пропущенного звонка',
     heroAfter: 'клиента.',
@@ -427,6 +426,9 @@ export const ru: Dictionary = {
     connectedAs: 'Подключён: {email}',
     connected: 'Подключён',
     expired: 'Доступ истёк — переподключите, чтобы продолжить синхронизацию',
+    syncFailed: 'Последняя синхронизация с календарём не удалась:',
+    syncNow: 'Синхронизировать',
+    synced: 'Календарь проверен — добавлено записей: {count}',
     connect: 'Подключить Google Календарь',
     reconnect: 'Переподключить',
     disconnect: 'Отключить',
