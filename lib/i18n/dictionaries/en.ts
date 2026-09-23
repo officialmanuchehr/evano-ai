@@ -17,6 +17,10 @@ export const en = {
     somethingWrong: 'Something went wrong',
     language: 'Language',
     interfaceLanguage: 'Interface language',
+    theme: 'Theme',
+    themeLight: 'Light',
+    themeDark: 'Dark',
+    themeSystem: 'System',
   },
 
   nav: {

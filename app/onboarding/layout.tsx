@@ -5,6 +5,7 @@ import { BrandLogo } from '@/components/brand/logo'
 import { OnboardingStepper } from '@/components/onboarding/stepper'
 import { logoutAction } from '@/lib/actions/auth'
 import { LanguageSwitcher } from '@/components/i18n/language-switcher'
+import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { getI18n } from '@/lib/i18n/server'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -27,6 +28,7 @@ export default async function OnboardingLayout({ children }: { children: React.R
       <header className="flex h-14 items-center justify-between border-b bg-background/70 px-4 backdrop-blur sm:px-6">
         <BrandLogo />
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           <LanguageSwitcher />
           <form action={logoutAction}>
             <button type="submit" className="text-sm text-muted-foreground hover:text-foreground">

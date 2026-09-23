@@ -9,6 +9,7 @@ import { BrandMark } from '@/components/brand/logo'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { LanguageSwitcher } from '@/components/i18n/language-switcher'
+import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { resetPasswordAction } from '@/lib/actions/auth'
 import { useI18n } from '@/lib/i18n/client'
 
@@ -37,7 +38,10 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center neon-backdrop px-4">
-      <LanguageSwitcher className="absolute top-4 right-4" />
+      <div className="absolute top-4 right-4 flex items-center gap-2">
+        <ThemeToggle />
+        <LanguageSwitcher />
+      </div>
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center space-y-2">
           <BrandMark size="lg" className="mx-auto" />

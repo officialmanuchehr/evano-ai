@@ -54,6 +54,7 @@
    EVANO AI BRAND — white base, electric blue primary, neon cyan glow accents
    ============================================================================= */
 :root {
+  --brand-mark: #004aad; /* logo blue */
   --background: oklch(1 0 0);
   --foreground: oklch(0.2 0.04 265);
   --card: oklch(1 0 0);
@@ -93,6 +94,8 @@
 }
 
 .dark {
+  color-scheme: dark; /* native selects, date/time pickers, checkboxes render dark */
+  --brand-mark: #5b9bff; /* lighter logo blue for contrast on dark */
   --background: oklch(0.16 0.03 265);
   --foreground: oklch(0.97 0.01 250);
   --card: oklch(0.2 0.04 265);

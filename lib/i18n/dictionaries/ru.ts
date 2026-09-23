@@ -18,6 +18,10 @@ export const ru: Dictionary = {
     somethingWrong: 'Что-то пошло не так',
     language: 'Язык',
     interfaceLanguage: 'Язык интерфейса',
+    theme: 'Тема',
+    themeLight: 'Светлая',
+    themeDark: 'Тёмная',
+    themeSystem: 'Как в системе',
   },
 
   nav: {

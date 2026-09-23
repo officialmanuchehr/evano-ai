@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 // Recreated as SVG so it stays crisp at every size. Same art as app/icon.svg.
 // =============================================================================
 
-export const BRAND_BLUE = '#004AAD'
+export const BRAND_BLUE = '#004AAD' // light theme; dark theme uses a lighter blue via --brand-mark
 
 // Measured from the logo: five 101-wide, fully rounded bars in an 836×504 box,
 // centred vertically in a square 836×836 viewBox. [x, y, height]
@@ -36,7 +36,7 @@ export function BrandMark({
       aria-hidden
       className={cn('flex-shrink-0 drop-shadow-[0_0_6px_rgb(0_74_173/0.35)]', sizes[size], className)}
     >
-      <g fill={BRAND_BLUE}>
+      <g fill="var(--brand-mark)">
         {BARS.map(([x, y, h]) => (
           <rect key={x} x={x} y={y} width="101" height={h} rx="50.5" />
         ))}

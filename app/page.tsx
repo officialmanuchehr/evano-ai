@@ -13,6 +13,7 @@ import {
 import { buttonVariants } from '@/components/ui/button'
 import { BrandMark, BrandLogo } from '@/components/brand/logo'
 import { LanguageSwitcher } from '@/components/i18n/language-switcher'
+import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { getI18n } from '@/lib/i18n/server'
 import { cn } from '@/lib/utils'
 
@@ -40,6 +41,7 @@ export default async function HomePage() {
             <BrandLogo />
           </Link>
           <nav className="flex items-center gap-2">
+            <ThemeToggle className="hidden sm:inline-flex" />
             <LanguageSwitcher className="hidden sm:inline-flex" />
             <Link href="/auth/login" className={buttonVariants({ variant: 'ghost' })}>
               {h.signIn}
@@ -88,7 +90,10 @@ export default async function HomePage() {
                 </li>
               ))}
             </ul>
-            <LanguageSwitcher className="sm:hidden" />
+            <div className="flex gap-2 sm:hidden">
+              <LanguageSwitcher />
+              <ThemeToggle />
+            </div>
           </div>
 
           {/* Illustrative call card */}

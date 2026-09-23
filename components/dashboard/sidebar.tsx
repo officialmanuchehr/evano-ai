@@ -20,6 +20,7 @@ import { BrandMark } from '@/components/brand/logo'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { LanguageSwitcher } from '@/components/i18n/language-switcher'
+import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { logoutAction } from '@/lib/actions/auth'
 import { useI18n } from '@/lib/i18n/client'
 import type { Dictionary } from '@/lib/i18n/dictionaries/en'
@@ -73,7 +74,10 @@ function SidebarContent({ orgName, onNavigate }: { orgName: string; onNavigate?:
 
       {/* Footer */}
       <div className="space-y-2 border-t p-2">
-        <LanguageSwitcher className="mx-1" />
+        <div className="mx-1 flex flex-wrap items-center gap-2">
+          <LanguageSwitcher />
+          <ThemeToggle />
+        </div>
         <form action={logoutAction}>
           <button
             type="submit"

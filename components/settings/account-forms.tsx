@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { LanguageSwitcher } from '@/components/i18n/language-switcher'
+import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { changePasswordAction, updateProfileAction } from '@/lib/actions/settings'
 import { keepValues } from '@/lib/forms'
 import { useI18n } from '@/lib/i18n/client'
@@ -57,9 +58,15 @@ export function AccountForms({ fullName, email }: { fullName: string; email: str
           </div>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            {t.common.interfaceLanguage}
-            <LanguageSwitcher />
+          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+            <span className="flex items-center gap-2">
+              {t.common.interfaceLanguage}
+              <LanguageSwitcher />
+            </span>
+            <span className="flex items-center gap-2">
+              {t.common.theme}
+              <ThemeToggle />
+            </span>
           </div>
           <Submit pending={savingName} label={s.saveProfile} />
         </div>

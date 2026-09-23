@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
-import { Toaster } from 'sonner'
 import { I18nProvider } from '@/lib/i18n/client'
 import { getI18n } from '@/lib/i18n/server'
+import { ThemeProvider, ThemedToaster } from '@/components/theme/theme-provider'
 import './globals.css'
 
 const geistSans = Geist({
@@ -27,12 +27,15 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
   const { locale, t } = await getI18n()
 
   return (
-    <html lang={locale} className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    // suppressHydrationWarning: next-themes sets the theme class before React hydrates
+    <html lang={locale} suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full bg-background text-foreground">
-        <I18nProvider locale={locale} t={t}>
-          {children}
-        </I18nProvider>
-        <Toaster position="top-right" richColors />
+        <ThemeProvider>
+          <I18nProvider locale={locale} t={t}>
+            {children}
+            <ThemedToaster />
+          </I18nProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
