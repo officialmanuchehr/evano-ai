@@ -1,4 +1,4 @@
-import { CALL_MODEL, DEFAULT_VOICE, LANGUAGES, MAX_TOKENS_BY_LENGTH, VOICES } from '@/lib/agent/constants'
+import { CALL_MODEL, LANGUAGES, MAX_TOKENS_BY_LENGTH, defaultGreeting, goodbyeMessage, resolveVoice } from '@/lib/agent/constants'
 import { WEEK_DAYS, type ServiceItem } from '@/lib/onboarding/constants'
 import type { AiAgent, BusinessHour, BusinessInfo, Faq, Organization } from '@/types/database'
 import { bookingTools } from '@/lib/vapi/tools'
@@ -88,7 +88,7 @@ export function buildSystemPrompt(src: AssistantSource): string {
 - Ask one question at a time and wait for the answer.
 - ${TONE_GUIDE[agent.tone]}
 - ${LENGTH_GUIDE[agent.response_length]}
-- Speak ${language} unless the caller clearly prefers another language.
+- Speak ${language} unless the caller clearly prefers another language. Tool results and the business information below may be in English — always translate them naturally when you speak.
 
 # What you can help with
 - Answer questions using only the business information below. If you do not know something, say so honestly and offer to take a message — never invent prices, availability or policies.
@@ -120,12 +120,12 @@ ${agent.system_prompt}`
 /** Full Vapi CreateAssistantDTO / UpdateAssistantDTO payload. */
 export function buildAssistantPayload(src: AssistantSource, opts: { webhookUrl: string; webhookSecret: string }) {
   const { org, agent } = src
-  const voiceId = (VOICES as readonly string[]).includes(agent.voice_id ?? '') ? agent.voice_id! : DEFAULT_VOICE
-  const transcriberLanguage = LANGUAGES.find((l) => l.value === agent.language)?.transcriber ?? 'en-US'
+  const voice = resolveVoice(agent.voice_id, agent.language)
+  const transcriber = LANGUAGES.find((l) => l.value === agent.language)?.transcriber ?? LANGUAGES[0].transcriber
 
   return {
     name: `${org.name} receptionist`.slice(0, 40), // Vapi limit: 40 chars
-    firstMessage: agent.greeting || `Thank you for calling ${org.name}. How can I help you today?`,
+    firstMessage: agent.greeting || defaultGreeting(agent.language, org.name),
     model: {
       provider: 'anthropic',
       model: CALL_MODEL,
@@ -134,9 +134,9 @@ export function buildAssistantPayload(src: AssistantSource, opts: { webhookUrl: 
       messages: [{ role: 'system', content: buildSystemPrompt(src) }],
       tools: bookingTools({ url: opts.webhookUrl, headers: { 'x-evano-secret': opts.webhookSecret } }),
     },
-    voice: { provider: 'vapi', voiceId },
-    transcriber: { provider: 'deepgram', model: 'nova-3', language: transcriberLanguage },
-    endCallMessage: `Thank you for calling ${org.name}. Goodbye!`,
+    voice: { provider: voice.provider, voiceId: voice.voiceId },
+    transcriber: { provider: 'deepgram', model: transcriber.model, language: transcriber.language },
+    endCallMessage: goodbyeMessage(agent.language, org.name),
     maxDurationSeconds: 900,
     // Call events come back to the app (call logging is handled by the webhook)
     server: { url: opts.webhookUrl, headers: { 'x-evano-secret': opts.webhookSecret } },

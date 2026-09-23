@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { createAdminClient, createClient, getAuthenticatedUser } from '@/lib/supabase/server'
-import { LANGUAGES, LIMITS, RESPONSE_LENGTHS, TONES, VOICES } from '@/lib/agent/constants'
+import { LANGUAGES, LIMITS, RESPONSE_LENGTHS, TONES, VOICE_OPTIONS } from '@/lib/agent/constants'
 import { syncAssistant } from '@/lib/vapi/sync'
 import { setPhoneNumberAssistant, VapiError } from '@/lib/vapi/client'
 import type { ActionResult } from '@/lib/actions/auth'
@@ -41,7 +41,7 @@ const agentSchema = z.object({
   tone: z.enum(values(TONES), { errorMap: () => ({ message: 'Choose a tone' }) }),
   response_length: z.enum(values(RESPONSE_LENGTHS), { errorMap: () => ({ message: 'Choose an answer length' }) }),
   language: z.enum(values(LANGUAGES), { errorMap: () => ({ message: 'Choose a language' }) }),
-  voice_id: z.enum(VOICES, { errorMap: () => ({ message: 'Choose a voice' }) }),
+  voice_id: z.string().refine((v) => VOICE_OPTIONS.some((o) => o.id === v), 'Choose a voice'),
   system_prompt: z
     .string()
     .trim()
@@ -61,6 +61,9 @@ export async function updateAgentAction(formData: FormData): Promise<ActionResul
   })
   if (!parsed.success) {
     return { success: false, error: parsed.error.errors[0].message }
+  }
+  if (!VOICE_OPTIONS.find((o) => o.id === parsed.data.voice_id)!.languages.includes(parsed.data.language)) {
+    return { success: false, error: 'Choose a voice for the selected language.' }
   }
 
   const orgId = await requireOrgId()

@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { createClient, getAuthenticatedUser } from '@/lib/supabase/server'
 import { TIMEZONES, INDUSTRIES } from '@/lib/onboarding/constants'
 import type { ActionResult } from '@/lib/actions/auth'
+import { defaultGreeting } from '@/lib/agent/constants'
 
 // =============================================================================
 // Helpers
@@ -86,7 +87,7 @@ export async function saveBusinessAction(formData: FormData): Promise<ActionResu
   // Keep the draft agent's greeting in sync with the (possibly renamed) business
   await supabase
     .from('ai_agents')
-    .update({ greeting: `Thank you for calling ${name}. How can I help you today?` })
+    .update({ greeting: defaultGreeting('en-US', name) })
     .eq('organization_id', orgId)
     .eq('status', 'draft')
 

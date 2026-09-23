@@ -7,7 +7,7 @@ import { AgentForm } from '@/components/agent/agent-form'
 import { LiveToggle } from '@/components/agent/live-toggle'
 import { TestCall } from '@/components/agent/test-call'
 import { WEEK_DAYS, AFTER_HOURS_OPTIONS, type ServiceItem } from '@/lib/onboarding/constants'
-import { DEFAULT_VOICE, type ResponseLength, type Tone } from '@/lib/agent/constants'
+import { resolveVoice, type ResponseLength, type Tone } from '@/lib/agent/constants'
 
 export const metadata: Metadata = { title: 'AI Receptionist' }
 
@@ -77,13 +77,14 @@ export default async function AgentPage() {
       <div className="grid gap-6 lg:grid-cols-[1fr_18rem]">
         {/* Settings form */}
         <AgentForm
+          businessName={auth.profile.organizations?.name ?? ''}
           initial={{
             name: agent.name,
             greeting: agent.greeting ?? '',
             tone: agent.tone as Tone,
             response_length: agent.response_length as ResponseLength,
             language: agent.language,
-            voice_id: agent.voice_id ?? DEFAULT_VOICE,
+            voice_id: resolveVoice(agent.voice_id, agent.language).id,
             system_prompt: agent.system_prompt ?? '',
           }}
         />

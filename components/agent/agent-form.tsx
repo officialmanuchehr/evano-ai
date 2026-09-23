@@ -9,7 +9,17 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { updateAgentAction } from '@/lib/actions/agent'
-import { LANGUAGES, LIMITS, RESPONSE_LENGTHS, TONES, VOICES, type ResponseLength, type Tone } from '@/lib/agent/constants'
+import {
+  LANGUAGES,
+  LIMITS,
+  RESPONSE_LENGTHS,
+  TONES,
+  defaultGreeting,
+  isDefaultGreeting,
+  voicesFor,
+  type ResponseLength,
+  type Tone,
+} from '@/lib/agent/constants'
 import { selectClassName } from '@/lib/onboarding/constants'
 import { keepValues } from '@/lib/forms'
 
@@ -34,12 +44,22 @@ function Counter({ value, max }: { value: string; max: number }) {
 // =============================================================================
 // AI Receptionist settings form
 // =============================================================================
-export function AgentForm({ initial }: { initial: AgentFormValues }) {
+export function AgentForm({ initial, businessName }: { initial: AgentFormValues; businessName: string }) {
   const [name, setName] = useState(initial.name)
   const [greeting, setGreeting] = useState(initial.greeting)
   const [tone, setTone] = useState<Tone>(initial.tone)
   const [length, setLength] = useState<ResponseLength>(initial.response_length)
   const [instructions, setInstructions] = useState(initial.system_prompt)
+  const [language, setLanguage] = useState(initial.language)
+  const [voice, setVoice] = useState(initial.voice_id)
+
+  // Switching language: offer that language's native voices, and translate the
+  // greeting too if it's still an untouched default
+  function changeLanguage(next: string) {
+    setLanguage(next)
+    setVoice(voicesFor(next)[0]?.id ?? '')
+    if (isDefaultGreeting(greeting, businessName)) setGreeting(defaultGreeting(next, businessName))
+  }
 
   const [, action, pending] = useActionState(async (_: unknown, formData: FormData) => {
     const result = await updateAgentAction(formData)
@@ -64,7 +84,14 @@ export function AgentForm({ initial }: { initial: AgentFormValues }) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="language">Language</Label>
-            <select id="language" name="language" defaultValue={initial.language} disabled={pending} className={selectClassName}>
+            <select
+              id="language"
+              name="language"
+              value={language}
+              onChange={(e) => changeLanguage(e.target.value)}
+              disabled={pending}
+              className={selectClassName}
+            >
               {LANGUAGES.map((l) => (
                 <option key={l.value} value={l.value}>
                   {l.label}
@@ -74,10 +101,17 @@ export function AgentForm({ initial }: { initial: AgentFormValues }) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="voice_id">Voice</Label>
-            <select id="voice_id" name="voice_id" defaultValue={initial.voice_id} disabled={pending} className={selectClassName}>
-              {VOICES.map((v) => (
-                <option key={v} value={v}>
-                  {v}
+            <select
+              id="voice_id"
+              name="voice_id"
+              value={voice}
+              onChange={(e) => setVoice(e.target.value)}
+              disabled={pending}
+              className={selectClassName}
+            >
+              {voicesFor(language).map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.label}
                 </option>
               ))}
             </select>
