@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { getAuthenticatedUser } from '@/lib/supabase/server'
-import { BrandMark } from '@/components/brand/logo'
+import { BrandLogo } from '@/components/brand/logo'
 import { OnboardingStepper } from '@/components/onboarding/stepper'
 import { logoutAction } from '@/lib/actions/auth'
 
@@ -19,10 +19,7 @@ export default async function OnboardingLayout({ children }: { children: React.R
     <div className="min-h-screen neon-backdrop">
       {/* Header */}
       <header className="flex h-14 items-center justify-between border-b bg-background/70 px-4 backdrop-blur sm:px-6">
-        <div className="flex items-center gap-2">
-          <BrandMark />
-          <span className="text-sm font-semibold">Evano AI</span>
-        </div>
+        <BrandLogo />
         <form action={logoutAction}>
           <button type="submit" className="text-sm text-muted-foreground hover:text-foreground">
             Sign out

@@ -11,7 +11,7 @@ import {
   Check,
 } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button'
-import { BrandMark } from '@/components/brand/logo'
+import { BrandMark, BrandLogo } from '@/components/brand/logo'
 import { cn } from '@/lib/utils'
 
 export const metadata: Metadata = {
@@ -70,9 +70,8 @@ export default function HomePage() {
       {/* ---------------------------------------------------------------- Nav */}
       <header className="sticky top-0 z-40 border-b bg-background/75 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2">
-            <BrandMark />
-            <span className="font-semibold">Evano AI</span>
+          <Link href="/" aria-label="Evano AI home">
+            <BrandLogo />
           </Link>
           <nav className="flex items-center gap-2">
             <Link href="/auth/login" className={buttonVariants({ variant: 'ghost' })}>
