@@ -81,3 +81,24 @@ export async function syncAssistant(orgId: string): Promise<string> {
 
   return created.id
 }
+
+/**
+ * After the owner changes something the receptionist relies on: refresh the
+ * Vapi assistant if one exists. Returns false only if a refresh was needed and
+ * failed (callers show a non-blocking warning).
+ */
+export async function refreshAssistantIfExists(orgId: string): Promise<boolean> {
+  const { data: agent } = await createAdminClient()
+    .from('ai_agents')
+    .select('provider_agent_id')
+    .eq('organization_id', orgId)
+    .maybeSingle()
+  if (!agent?.provider_agent_id) return true
+  try {
+    await syncAssistant(orgId)
+    return true
+  } catch (err) {
+    console.error('[vapi.refresh]', err)
+    return false
+  }
+}

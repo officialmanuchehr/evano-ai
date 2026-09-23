@@ -25,14 +25,27 @@ export type BusinessFormDefaults = {
 // =============================================================================
 // Step 1 form — business identity and contact details
 // =============================================================================
-export function BusinessForm({ defaults }: { defaults: BusinessFormDefaults }) {
+export function BusinessForm({
+  defaults,
+  action: submit = saveBusinessAction,
+  submitLabel,
+  successMessage,
+}: {
+  defaults: BusinessFormDefaults
+  /** Defaults to the onboarding step; Settings passes its own action */
+  action?: (formData: FormData) => Promise<{ success: boolean; error?: string; warning?: string }>
+  submitLabel?: string
+  successMessage?: string
+}) {
   const timezoneRef = useRef<HTMLSelectElement>(null)
   const { t } = useI18n()
   const b = t.onboarding.business
 
   const [, action, pending] = useActionState(async (_: unknown, formData: FormData) => {
-    const result = await saveBusinessAction(formData)
+    const result = await submit(formData)
     if (!result.success && result.error) toast.error(result.error)
+    else if (result.success && result.warning) toast.warning(result.warning)
+    else if (result.success && successMessage) toast.success(successMessage)
     return result
   }, null)
 
@@ -130,7 +143,7 @@ export function BusinessForm({ defaults }: { defaults: BusinessFormDefaults }) {
         <FieldHint>{b.aboutHint}</FieldHint>
       </div>
 
-      <StepActions pending={pending} />
+      <StepActions pending={pending} submitLabel={submitLabel} />
     </form>
   )
 }

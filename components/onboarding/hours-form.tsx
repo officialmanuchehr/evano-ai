@@ -22,10 +22,19 @@ export function HoursForm({
   initialHours,
   initialAfterHours,
   initialTransferNumber,
+  action: submit = saveHoursAction,
+  backHref = '/onboarding/business',
+  submitLabel,
+  successMessage,
 }: {
   initialHours: DayHours[]
   initialAfterHours: AfterHours
   initialTransferNumber: string
+  /** Defaults to the onboarding step; Settings passes its own action */
+  action?: (formData: FormData) => Promise<{ success: boolean; error?: string; warning?: string }>
+  backHref?: string | null
+  submitLabel?: string
+  successMessage?: string
 }) {
   const { t } = useI18n()
   const o = t.onboarding.hours
@@ -33,8 +42,10 @@ export function HoursForm({
   const [afterHours, setAfterHours] = useState<AfterHours>(initialAfterHours)
 
   const [, action, pending] = useActionState(async (_: unknown, formData: FormData) => {
-    const result = await saveHoursAction(formData)
+    const result = await submit(formData)
     if (!result.success && result.error) toast.error(result.error)
+    else if (result.success && result.warning) toast.warning(result.warning)
+    else if (result.success && successMessage) toast.success(successMessage)
     return result
   }, null)
 
@@ -134,7 +145,7 @@ export function HoursForm({
         )}
       </fieldset>
 
-      <StepActions backHref="/onboarding/business" pending={pending} />
+      <StepActions backHref={backHref ?? undefined} pending={pending} submitLabel={submitLabel} />
     </form>
   )
 }

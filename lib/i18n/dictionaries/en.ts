@@ -435,6 +435,27 @@ export const en = {
     } as Record<string, string>,
   },
 
+  settings: {
+    title: 'Settings',
+    subtitle: 'Your business details, hours and account.',
+    business: 'Business details',
+    businessText: 'Your receptionist uses these to introduce your business and answer questions.',
+    hours: 'Opening hours',
+    hoursText: 'When you are open and what happens to calls after hours.',
+    account: 'Account',
+    accountText: 'Your name, sign-in and interface language.',
+    fullName: 'Your name',
+    email: 'Sign-in email',
+    emailNote: 'Your sign-in email can’t be changed here yet.',
+    saveProfile: 'Save name',
+    password: 'Change password',
+    newPassword: 'New password',
+    confirmPassword: 'Confirm new password',
+    changePassword: 'Change password',
+    passwordChanged: 'Password changed',
+    saved: 'Saved',
+  },
+
   knowledge: {
     title: 'Knowledge',
     subtitle: 'What your receptionist knows. Changes are used on the very next call.',

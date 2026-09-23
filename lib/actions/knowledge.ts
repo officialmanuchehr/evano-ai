@@ -2,9 +2,9 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { createAdminClient, createClient, getAuthenticatedUser } from '@/lib/supabase/server'
+import { createClient, getAuthenticatedUser } from '@/lib/supabase/server'
 import { faqsSchema, parseJsonField, servicesSchema } from '@/lib/knowledge/schemas'
-import { syncAssistant } from '@/lib/vapi/sync'
+import { refreshAssistantIfExists } from '@/lib/vapi/sync'
 import { getI18n } from '@/lib/i18n/server'
 import type { ActionResult } from '@/lib/actions/auth'
 
@@ -22,23 +22,6 @@ async function requireOrgId() {
   return auth.profile.organization_id
 }
 
-/** Push changes to the live receptionist; a failure is reported as a warning, not an error. */
-async function refreshReceptionist(orgId: string, warning: string): Promise<string | undefined> {
-  const { data: agent } = await createAdminClient()
-    .from('ai_agents')
-    .select('provider_agent_id')
-    .eq('organization_id', orgId)
-    .maybeSingle()
-  if (!agent?.provider_agent_id) return undefined
-  try {
-    await syncAssistant(orgId)
-    return undefined
-  } catch (err) {
-    console.error('[knowledge.sync]', err)
-    return warning
-  }
-}
-
 export async function saveServicesAction(formData: FormData): Promise<KnowledgeResult> {
   const { t } = await getI18n()
   const services = servicesSchema.safeParse(parseJsonField(formData, 'services'))
@@ -52,7 +35,7 @@ export async function saveServicesAction(formData: FormData): Promise<KnowledgeR
     return { success: false, error: t.errors.generic }
   }
 
-  const warning = await refreshReceptionist(orgId, t.knowledge.syncWarning)
+  const warning = (await refreshAssistantIfExists(orgId)) ? undefined : t.knowledge.syncWarning
   revalidatePath('/dashboard', 'layout')
   return { success: true, warning }
 }
@@ -75,7 +58,7 @@ export async function saveFaqsAction(formData: FormData): Promise<KnowledgeResul
     return { success: false, error: t.errors.generic }
   }
 
-  const warning = await refreshReceptionist(orgId, t.knowledge.syncWarning)
+  const warning = (await refreshAssistantIfExists(orgId)) ? undefined : t.knowledge.syncWarning
   revalidatePath('/dashboard', 'layout')
   return { success: true, warning }
 }
