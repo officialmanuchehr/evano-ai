@@ -6,6 +6,8 @@ import { buttonVariants } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { PhoneCall, CalendarDays, PhoneForwarded, Bot, ArrowRight, PhoneIncoming } from 'lucide-react'
 import type { Metadata } from 'next'
+import { CallStatusBadge } from '@/components/calls/call-badges'
+import { formatDateTime, formatDuration, startOfTodayIso } from '@/lib/format'
 
 export const metadata: Metadata = { title: 'Overview' }
 
@@ -68,8 +70,10 @@ export default async function OverviewPage() {
 
   const supabase = await createClient()
   const orgId = auth.profile.organization_id
+  // "Today" means today in the business's timezone, not the server's (UTC)
+  const timeZone = auth.profile.organizations?.timezone ?? 'UTC'
   const today = new Date()
-  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString()
+  const startOfDay = startOfTodayIso(timeZone)
 
   // Fetch stats in parallel
   const [agentResult, callsTodayResult, answeredCallsResult, bookingsTodayResult, transfersResult, recentCallsResult, upcomingBookingsResult] =
@@ -79,7 +83,7 @@ export default async function OverviewPage() {
       supabase.from('calls').select('id', { count: 'exact', head: true }).eq('organization_id', orgId).eq('status', 'completed').gte('started_at', startOfDay),
       supabase.from('bookings').select('id', { count: 'exact', head: true }).eq('organization_id', orgId).gte('start_time', startOfDay),
       supabase.from('calls').select('id', { count: 'exact', head: true }).eq('organization_id', orgId).eq('status', 'transferred').gte('started_at', startOfDay),
-      supabase.from('calls').select('id, caller_number, started_at, duration_seconds, status, purpose').eq('organization_id', orgId).order('started_at', { ascending: false }).limit(5),
+      supabase.from('calls').select('id, caller_number, started_at, created_at, duration_seconds, status, purpose').eq('organization_id', orgId).order('created_at', { ascending: false }).limit(5),
       supabase.from('bookings').select('id, customer_name, customer_phone, service, start_time, status').eq('organization_id', orgId).gte('start_time', new Date().toISOString()).order('start_time', { ascending: true }).limit(5),
     ])
 
@@ -99,7 +103,7 @@ export default async function OverviewPage() {
       <div>
         <h1 className="text-2xl font-semibold neon-text">Overview</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          {today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          {today.toLocaleDateString('en-US', { timeZone, weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
         </p>
       </div>
 
@@ -149,18 +153,19 @@ export default async function OverviewPage() {
           ) : (
             <div className="divide-y">
               {recentCalls.map((call) => (
-                <div key={call.id} className="flex items-center justify-between px-5 py-3">
+                <Link
+                  key={call.id}
+                  href={`/dashboard/calls/${call.id}`}
+                  className="flex items-center justify-between px-5 py-3 transition-colors hover:bg-muted/60"
+                >
                   <div>
-                    <p className="text-sm font-medium">{call.caller_number ?? 'Unknown'}</p>
+                    <p className="text-sm font-medium tabular-nums">{call.caller_number ?? 'Unknown'}</p>
                     <p className="text-xs text-muted-foreground">
-                      {call.started_at ? new Date(call.started_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '—'}
-                      {call.duration_seconds ? ` · ${Math.round(call.duration_seconds / 60)}m` : ''}
+                      {formatDateTime(call.started_at ?? call.created_at, timeZone)} · {formatDuration(call.duration_seconds)}
                     </p>
                   </div>
-                  <Badge variant={call.status === 'completed' ? 'secondary' : call.status === 'transferred' ? 'outline' : 'destructive'} className="text-xs capitalize">
-                    {call.status}
-                  </Badge>
-                </div>
+                  <CallStatusBadge status={call.status} />
+                </Link>
               ))}
             </div>
           )}
@@ -185,8 +190,7 @@ export default async function OverviewPage() {
                     <p className="text-sm font-medium">{booking.customer_name ?? 'Unknown'}</p>
                     <p className="text-xs text-muted-foreground">
                       {booking.service ?? 'Appointment'} ·{' '}
-                      {new Date(booking.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}{' '}
-                      {new Date(booking.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                      {formatDateTime(booking.start_time, timeZone)}
                     </p>
                   </div>
                   <Badge variant="secondary" className="text-xs capitalize">
