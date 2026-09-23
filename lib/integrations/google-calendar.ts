@@ -103,11 +103,17 @@ export async function disconnect(orgId: string) {
     .maybeSingle()
 
   if (data?.encrypted_credentials) {
-    // Revoke at Google too, so the token is dead even if our copy leaked
-    const token = decryptSecret(data.encrypted_credentials)
-    await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(token)}`, { method: 'POST' }).catch(() => {})
+    // Revoke at Google too, so the token is dead even if our copy leaked.
+    // Best effort: a corrupted/undecryptable token must not block disconnecting.
+    try {
+      const token = decryptSecret(data.encrypted_credentials)
+      await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(token)}`, { method: 'POST' })
+    } catch (err) {
+      console.warn('[google] revoke skipped', err)
+    }
   }
-  await db.from('integrations').delete().eq('organization_id', orgId).eq('provider', PROVIDER)
+  const { error } = await db.from('integrations').delete().eq('organization_id', orgId).eq('provider', PROVIDER)
+  if (error) throw new Error(`Could not remove Google connection: ${error.message}`)
 }
 
 // ------------------------------------------------------------- API access
