@@ -29,7 +29,6 @@ export default async function OnboardingLayout({ children }: { children: React.R
         <BrandLogo />
         <div className="flex items-center gap-3">
           <ThemeToggle />
-          <LanguageSwitcher />
           <form action={logoutAction}>
             <button type="submit" className="text-sm text-muted-foreground hover:text-foreground">
               {t.common.signOut}
@@ -41,6 +40,9 @@ export default async function OnboardingLayout({ children }: { children: React.R
       <main className="mx-auto w-full max-w-2xl space-y-8 px-4 py-8 sm:py-12">
         <OnboardingStepper />
         {children}
+        <div className="flex justify-center">
+          <LanguageSwitcher />
+        </div>
       </main>
     </div>
   )

@@ -20,7 +20,8 @@ export const en = {
     theme: 'Theme',
     themeLight: 'Light',
     themeDark: 'Dark',
-    themeSystem: 'System',
+    themeToDark: 'Switch to dark theme',
+    themeToLight: 'Switch to light theme',
   },
 
   nav: {

@@ -5,11 +5,11 @@ import { Toaster } from 'sonner'
 
 // =============================================================================
 // Light / dark theme (class on <html>, saved in localStorage by next-themes).
-// Light is the default brand look; users can switch to dark or follow the OS.
+// Light is the default brand look; users can switch to dark.
 // =============================================================================
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   return (
-    <NextThemesProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+    <NextThemesProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
       {children}
     </NextThemesProvider>
   )

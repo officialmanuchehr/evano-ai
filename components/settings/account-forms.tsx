@@ -58,15 +58,15 @@ export function AccountForms({ fullName, email }: { fullName: string; email: str
           </div>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-2">
-              {t.common.interfaceLanguage}
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-3">
+              <span className="w-40">{t.common.interfaceLanguage}</span>
               <LanguageSwitcher />
-            </span>
-            <span className="flex items-center gap-2">
-              {t.common.theme}
-              <ThemeToggle />
-            </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="w-40">{t.common.theme}</span>
+              <ThemeToggle className="border" />
+            </div>
           </div>
           <Submit pending={savingName} label={s.saveProfile} />
         </div>

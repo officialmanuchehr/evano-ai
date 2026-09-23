@@ -41,8 +41,7 @@ export default async function HomePage() {
             <BrandLogo />
           </Link>
           <nav className="flex items-center gap-2">
-            <ThemeToggle className="hidden sm:inline-flex" />
-            <LanguageSwitcher className="hidden sm:inline-flex" />
+            <ThemeToggle />
             <Link href="/auth/login" className={buttonVariants({ variant: 'ghost' })}>
               {h.signIn}
             </Link>
@@ -90,10 +89,6 @@ export default async function HomePage() {
                 </li>
               ))}
             </ul>
-            <div className="flex gap-2 sm:hidden">
-              <LanguageSwitcher />
-              <ThemeToggle />
-            </div>
           </div>
 
           {/* Illustrative call card */}
@@ -203,7 +198,8 @@ export default async function HomePage() {
             <BrandMark />
             <span>© {new Date().getFullYear()} Evano AI</span>
           </div>
-          <nav className="flex gap-5">
+          <nav className="flex flex-wrap items-center gap-5">
+            <LanguageSwitcher />
             <Link href="/auth/login" className="hover:text-foreground">
               {h.signIn}
             </Link>

@@ -21,7 +21,8 @@ export const ru: Dictionary = {
     theme: 'Тема',
     themeLight: 'Светлая',
     themeDark: 'Тёмная',
-    themeSystem: 'Как в системе',
+    themeToDark: 'Включить тёмную тему',
+    themeToLight: 'Включить светлую тему',
   },
 
   nav: {

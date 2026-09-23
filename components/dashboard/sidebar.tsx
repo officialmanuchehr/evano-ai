@@ -43,9 +43,10 @@ function SidebarContent({ orgName, onNavigate }: { orgName: string; onNavigate?:
   return (
     <div className="flex h-full flex-col">
       {/* Logo / org name */}
-      <div className="flex h-14 items-center gap-2 border-b px-4">
+      <div className="flex h-14 items-center gap-2 border-b pr-2 pl-4">
         <BrandMark />
-        <span className="truncate text-sm font-semibold">{orgName}</span>
+        <span className="flex-1 truncate text-sm font-semibold">{orgName}</span>
+        <ThemeToggle />
       </div>
 
       {/* Navigation */}
@@ -74,10 +75,7 @@ function SidebarContent({ orgName, onNavigate }: { orgName: string; onNavigate?:
 
       {/* Footer */}
       <div className="space-y-2 border-t p-2">
-        <div className="mx-1 flex flex-wrap items-center gap-2">
-          <LanguageSwitcher />
-          <ThemeToggle />
-        </div>
+        <LanguageSwitcher className="mx-1" />
         <form action={logoutAction}>
           <button
             type="submit"
@@ -110,6 +108,8 @@ export function DashboardSidebar({ orgName }: { orgName: string }) {
           <span className="max-w-[160px] truncate text-sm font-semibold">{orgName}</span>
         </div>
 
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
         <Sheet open={open} onOpenChange={setOpen}>
           {/* base-ui uses `render` (not Radix's `asChild`) to swap the trigger element */}
           <SheetTrigger render={<Button variant="ghost" size="icon" className="h-8 w-8" />}>
@@ -120,6 +120,7 @@ export function DashboardSidebar({ orgName }: { orgName: string }) {
             <SidebarContent orgName={orgName} onNavigate={() => setOpen(false)} />
           </SheetContent>
         </Sheet>
+        </div>
       </header>
     </>
   )

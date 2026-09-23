@@ -26,10 +26,7 @@ export default function RegisterPage() {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center neon-backdrop px-4">
-      <div className="absolute top-4 right-4 flex items-center gap-2">
-        <ThemeToggle />
-        <LanguageSwitcher />
-      </div>
+      <ThemeToggle className="absolute top-4 right-4" />
       <div className="w-full max-w-sm space-y-6">
         {/* Logo */}
         <div className="text-center space-y-2">
@@ -109,6 +106,9 @@ export default function RegisterPage() {
           </Link>
           .
         </p>
+        <div className="flex justify-center">
+          <LanguageSwitcher />
+        </div>
       </div>
     </div>
   )
