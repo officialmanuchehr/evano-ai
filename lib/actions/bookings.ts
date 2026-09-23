@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { createClient, getAuthenticatedUser } from '@/lib/supabase/server'
-import { saveBooking } from '@/lib/bookings/service'
+import { cancelBooking, saveBooking } from '@/lib/bookings/service'
 import type { ActionResult } from '@/lib/actions/auth'
 
 // =============================================================================
@@ -74,6 +74,13 @@ export async function setBookingStatusAction(
 ): Promise<ActionResult> {
   if (!STATUS_CHANGES.includes(status)) return { success: false, error: 'Invalid status' }
   const orgId = await requireOrgId()
+
+  // Cancelling also removes the Google Calendar event
+  if (status === 'cancelled') {
+    if (!(await cancelBooking(orgId, bookingId))) return { success: false, error: 'Could not update the booking.' }
+    revalidatePath('/dashboard', 'layout')
+    return { success: true }
+  }
 
   // User client: RLS limits this to the caller's own org
   const supabase = await createClient()

@@ -2,6 +2,7 @@ import 'server-only'
 
 import { createAdminClient } from '@/lib/supabase/server'
 import type { ServiceItem } from '@/lib/onboarding/constants'
+import { createEvent, deleteEvent, getBusy, updateEvent } from '@/lib/integrations/google-calendar'
 import {
   computeSlots,
   formatDayLabel,
@@ -45,16 +46,29 @@ function matchService(services: ServiceItem[], name: string | undefined) {
 async function busyOn(orgId: string, date: LocalDate, timeZone: string, excludeBookingId?: string) {
   const dayStart = zonedToUtc(date, 0, 0, timeZone)
   const dayEnd = new Date(dayStart.getTime() + 24 * 3_600_000)
-  let q = createAdminClient()
+  const q = createAdminClient()
     .from('bookings')
     .select('id, start_time, end_time')
     .eq('organization_id', orgId)
     .in('status', [...ACTIVE_STATUSES])
     .lt('start_time', dayEnd.toISOString())
     .gt('end_time', dayStart.toISOString())
-  if (excludeBookingId) q = q.neq('id', excludeBookingId)
-  const { data } = await q
-  return (data ?? []).map((b) => ({ start: new Date(b.start_time), end: new Date(b.end_time) }))
+  const [{ data }, googleBusy, excluded] = await Promise.all([
+    excludeBookingId ? q.neq('id', excludeBookingId) : q,
+    getBusy(orgId, dayStart, dayEnd), // [] when Google Calendar isn't connected
+    excludeBookingId
+      ? createAdminClient().from('bookings').select('start_time, end_time').eq('id', excludeBookingId).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ])
+
+  const own = excluded.data
+  return [
+    ...(data ?? []).map((b) => ({ start: new Date(b.start_time), end: new Date(b.end_time) })),
+    // When rescheduling, the booking's own calendar event must not block it
+    ...googleBusy.filter(
+      (b) => !own || b.start.getTime() !== Date.parse(own.start_time) || b.end.getTime() !== Date.parse(own.end_time)
+    ),
+  ]
 }
 
 // ------------------------------------------------------------ availability
@@ -188,5 +202,51 @@ export async function saveBooking(
     return { ok: false, error: 'The booking could not be saved.' }
   }
 
+  await syncCalendarEvent(orgId, data.id, {
+    customerName: row.customer_name,
+    customerPhone: row.customer_phone,
+    service: row.service,
+    notes: row.notes,
+    start,
+    end,
+    timeZone,
+    createdBy: opts.createdBy,
+  })
+
   return { ok: true, bookingId: data.id, startTime: row.start_time, dateLabel, time: formatSlot(start, timeZone), service: row.service }
+}
+
+// ------------------------------------------------------------ calendar sync
+
+/** Create or move the booking's Google Calendar event (no-op when not connected). */
+async function syncCalendarEvent(orgId: string, bookingId: string, event: Parameters<typeof createEvent>[1]) {
+  const db = createAdminClient()
+  const { data: booking } = await db.from('bookings').select('external_booking_id').eq('id', bookingId).single()
+
+  if (booking?.external_booking_id) {
+    await updateEvent(orgId, booking.external_booking_id, event)
+    return
+  }
+  const eventId = await createEvent(orgId, event)
+  if (eventId) {
+    await db
+      .from('bookings')
+      .update({ external_provider: 'google_calendar', external_booking_id: eventId })
+      .eq('id', bookingId)
+  }
+}
+
+/** Cancel a booking and remove its calendar event. */
+export async function cancelBooking(orgId: string, bookingId: string) {
+  const db = createAdminClient()
+  const { data, error } = await db
+    .from('bookings')
+    .update({ status: 'cancelled' })
+    .eq('id', bookingId)
+    .eq('organization_id', orgId)
+    .select('external_booking_id')
+    .maybeSingle()
+  if (error || !data) return false
+  if (data.external_booking_id) await deleteEvent(orgId, data.external_booking_id)
+  return true
 }

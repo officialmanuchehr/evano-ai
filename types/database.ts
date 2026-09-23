@@ -486,7 +486,8 @@ export interface Database {
           organization_id: string
           provider: 'google_calendar' | 'microsoft_calendar' | 'calendly' | 'vapi' | 'retell'
           provider_account_id: string | null
-          // encrypted_credentials intentionally excluded from client-side types
+          // BYTEA as "\x…" hex text; AES-GCM ciphertext — only ever selected server-side (lib/crypto.ts)
+          encrypted_credentials: string | null
           metadata: Json
           status: 'connected' | 'disconnected' | 'error'
           created_at: string
@@ -497,6 +498,7 @@ export interface Database {
           organization_id: string
           provider: 'google_calendar' | 'microsoft_calendar' | 'calendly' | 'vapi' | 'retell'
           provider_account_id?: string | null
+          encrypted_credentials?: string | null
           metadata?: Json
           status?: 'connected' | 'disconnected' | 'error'
           created_at?: string
@@ -504,6 +506,7 @@ export interface Database {
         }
         Update: {
           provider_account_id?: string | null
+          encrypted_credentials?: string | null
           metadata?: Json
           status?: 'connected' | 'disconnected' | 'error'
           updated_at?: string
