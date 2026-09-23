@@ -39,7 +39,7 @@ export type EndOfCallReportMessage = {
 type CallStatus = 'in_progress' | 'completed' | 'missed' | 'failed' | 'transferred'
 
 /** Find the org (and agent/phone rows) a Vapi call belongs to. */
-async function resolveOwner(call: VapiCall | undefined) {
+export async function resolveOwner(call: VapiCall | undefined) {
   const db = createAdminClient()
   if (call?.assistantId) {
     const { data } = await db

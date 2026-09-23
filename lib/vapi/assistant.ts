@@ -1,6 +1,7 @@
 import { CALL_MODEL, DEFAULT_VOICE, LANGUAGES, MAX_TOKENS_BY_LENGTH, VOICES } from '@/lib/agent/constants'
 import { WEEK_DAYS, type ServiceItem } from '@/lib/onboarding/constants'
 import type { AiAgent, BusinessHour, BusinessInfo, Faq, Organization } from '@/types/database'
+import { bookingTools } from '@/lib/vapi/tools'
 
 // =============================================================================
 // Build the Vapi assistant for one organization.
@@ -91,7 +92,7 @@ export function buildSystemPrompt(src: AssistantSource): string {
 
 # What you can help with
 - Answer questions using only the business information below. If you do not know something, say so honestly and offer to take a message — never invent prices, availability or policies.
-- Appointment requests: collect the caller’s name, phone number, the service they want and their preferred day and time, then confirm the details back to them and tell them the team will confirm the booking.
+- Appointments: ask which service and day the caller wants, then call check_availability and offer two or three of the free times. Never offer or confirm a time without checking. When they choose, collect their name (and phone number if different from the one they are calling from), read the details back, then call book_appointment. Only say the appointment is booked if book_appointment confirms it.
 - Messages: take the caller’s name, phone number and a short message, and read it back to confirm.
 - ${afterHours}
 - When the caller has what they need, thank them and say goodbye.
@@ -131,6 +132,7 @@ export function buildAssistantPayload(src: AssistantSource, opts: { webhookUrl: 
       temperature: 0.4,
       maxTokens: MAX_TOKENS_BY_LENGTH[agent.response_length],
       messages: [{ role: 'system', content: buildSystemPrompt(src) }],
+      tools: bookingTools({ url: opts.webhookUrl, headers: { 'x-evano-secret': opts.webhookSecret } }),
     },
     voice: { provider: 'vapi', voiceId },
     transcriber: { provider: 'deepgram', model: 'nova-3', language: transcriberLanguage },

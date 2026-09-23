@@ -8,6 +8,7 @@ import {
   type EndOfCallReportMessage,
   type StatusUpdateMessage,
 } from '@/lib/calls/record'
+import { handleToolCalls, type ToolCallsMessage } from '@/lib/vapi/tools'
 
 // Leaves time for the Claude summary that runs after the response is sent
 export const maxDuration = 60
@@ -58,6 +59,11 @@ export async function POST(request: Request) {
         after(() => summarizeAndStore(saved.callRowId, saved.orgId, saved.transcript))
       }
       return NextResponse.json({ received: true, saved: Boolean(saved) })
+    }
+
+    // The receptionist is using a tool mid-call (availability / booking)
+    case 'tool-calls': {
+      return NextResponse.json(await handleToolCalls(message as ToolCallsMessage))
     }
 
     // Sent when a number has no assistant attached — i.e. the receptionist is paused
