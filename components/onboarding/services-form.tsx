@@ -10,6 +10,8 @@ import { StepActions, FieldHint } from '@/components/onboarding/step-card'
 import { completeOnboardingAction } from '@/lib/actions/onboarding'
 import type { FaqItem, ServiceItem } from '@/lib/onboarding/constants'
 import { keepValues } from '@/lib/forms'
+import { interpolate } from '@/lib/i18n/config'
+import { useI18n } from '@/lib/i18n/client'
 
 const emptyService: ServiceItem = { name: '', duration: 30, price: '' }
 const emptyFaq: FaqItem = { question: '', answer: '' }
@@ -25,6 +27,8 @@ export function ServicesForm({
   initialServices: ServiceItem[]
   initialFaqs: FaqItem[]
 }) {
+  const { t } = useI18n()
+  const o = t.onboarding.services
   const [services, setServices] = useState<ServiceItem[]>(
     initialServices.length ? initialServices : [emptyService]
   )
@@ -53,14 +57,14 @@ export function ServicesForm({
 
       {/* Services */}
       <fieldset className="space-y-3" disabled={pending}>
-        <legend className="mb-1 text-sm font-medium">Services</legend>
-        <FieldHint>What callers can book. Leave blank to skip — you can add these later.</FieldHint>
+        <legend className="mb-1 text-sm font-medium">{o.services}</legend>
+        <FieldHint>{o.servicesHint}</FieldHint>
 
         {services.map((s, i) => (
           <div key={i} className="grid grid-cols-[1fr_auto] gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_6.5rem_7rem_auto]">
             <Input
-              placeholder="Service name, e.g. Haircut"
-              aria-label={`Service ${i + 1} name`}
+              placeholder={o.servicePlaceholder}
+              aria-label={interpolate(o.serviceName, { n: i + 1 })}
               value={s.name}
               onChange={(e) => updateService(i, { name: e.target.value })}
             />
@@ -69,7 +73,7 @@ export function ServicesForm({
               variant="ghost"
               size="icon"
               className="sm:order-last"
-              aria-label={`Remove service ${i + 1}`}
+              aria-label={interpolate(o.removeService, { n: i + 1 })}
               onClick={() => setServices((prev) => (prev.length > 1 ? prev.filter((_, idx) => idx !== i) : [emptyService]))}
             >
               <Trash2 className="h-4 w-4" />
@@ -80,15 +84,15 @@ export function ServicesForm({
                 min={5}
                 max={600}
                 step={5}
-                aria-label={`Service ${i + 1} duration in minutes`}
+                aria-label={interpolate(o.serviceDuration, { n: i + 1 })}
                 value={s.duration ?? ''}
                 onChange={(e) => updateService(i, { duration: e.target.value ? Number(e.target.value) : null })}
               />
-              <span className="text-xs text-muted-foreground">min</span>
+              <span className="text-xs text-muted-foreground">{o.min}</span>
             </div>
             <Input
-              placeholder="Price"
-              aria-label={`Service ${i + 1} price`}
+              placeholder={o.price}
+              aria-label={interpolate(o.servicePrice, { n: i + 1 })}
               value={s.price}
               onChange={(e) => updateService(i, { price: e.target.value })}
             />
@@ -97,21 +101,21 @@ export function ServicesForm({
 
         <Button type="button" variant="outline" size="sm" onClick={() => setServices((p) => [...p, emptyService])}>
           <Plus className="mr-1 h-3.5 w-3.5" />
-          Add service
+          {o.addService}
         </Button>
       </fieldset>
 
       {/* FAQs */}
       <fieldset className="space-y-3" disabled={pending}>
-        <legend className="mb-1 text-sm font-medium">Frequently asked questions</legend>
-        <FieldHint>Questions callers often ask, and how the AI should answer them.</FieldHint>
+        <legend className="mb-1 text-sm font-medium">{o.faqs}</legend>
+        <FieldHint>{o.faqsHint}</FieldHint>
 
         {faqs.map((f, i) => (
           <div key={i} className="space-y-2 rounded-lg border p-3">
             <div className="flex gap-2">
               <Input
-                placeholder="Question, e.g. Do you have parking?"
-                aria-label={`FAQ ${i + 1} question`}
+                placeholder={o.questionPlaceholder}
+                aria-label={interpolate(o.faqQuestion, { n: i + 1 })}
                 value={f.question}
                 onChange={(e) => updateFaq(i, { question: e.target.value })}
               />
@@ -119,7 +123,7 @@ export function ServicesForm({
                 type="button"
                 variant="ghost"
                 size="icon"
-                aria-label={`Remove FAQ ${i + 1}`}
+                aria-label={interpolate(o.removeFaq, { n: i + 1 })}
                 onClick={() => setFaqs((prev) => (prev.length > 1 ? prev.filter((_, idx) => idx !== i) : [emptyFaq]))}
               >
                 <Trash2 className="h-4 w-4" />
@@ -127,8 +131,8 @@ export function ServicesForm({
             </div>
             <Textarea
               rows={2}
-              placeholder="Answer, e.g. Yes — free parking behind the building."
-              aria-label={`FAQ ${i + 1} answer`}
+              placeholder={o.answerPlaceholder}
+              aria-label={interpolate(o.faqAnswer, { n: i + 1 })}
               value={f.answer}
               onChange={(e) => updateFaq(i, { answer: e.target.value })}
             />
@@ -137,11 +141,11 @@ export function ServicesForm({
 
         <Button type="button" variant="outline" size="sm" onClick={() => setFaqs((p) => [...p, emptyFaq])}>
           <Plus className="mr-1 h-3.5 w-3.5" />
-          Add question
+          {o.addFaq}
         </Button>
       </fieldset>
 
-      <StepActions backHref="/onboarding/hours" pending={pending} submitLabel="Finish setup" />
+      <StepActions backHref="/onboarding/hours" pending={pending} submitLabel={o.finish} />
     </form>
   )
 }

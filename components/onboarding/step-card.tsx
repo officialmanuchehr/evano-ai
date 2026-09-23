@@ -1,6 +1,9 @@
+'use client'
+
 import Link from 'next/link'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { useI18n } from '@/lib/i18n/client'
 
 // =============================================================================
 // Shared building blocks for each onboarding step
@@ -30,18 +33,19 @@ export function StepCard({
 export function StepActions({
   backHref,
   pending,
-  submitLabel = 'Continue',
+  submitLabel,
 }: {
   backHref?: string
   pending: boolean
   submitLabel?: string
 }) {
+  const { t } = useI18n()
   return (
     <div className="flex items-center justify-between gap-3 border-t pt-6">
       {backHref ? (
         <Link href={backHref} className={buttonVariants({ variant: 'ghost' })}>
           <ArrowLeft className="mr-1 h-4 w-4" />
-          Back
+          {t.common.back}
         </Link>
       ) : (
         <span />
@@ -50,10 +54,10 @@ export function StepActions({
         {pending ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Saving…
+            {t.common.saving}
           </>
         ) : (
-          submitLabel
+          submitLabel ?? t.common.continue
         )}
       </Button>
     </div>

@@ -9,6 +9,8 @@ import { StepActions } from '@/components/onboarding/step-card'
 import { saveHoursAction } from '@/lib/actions/onboarding'
 import { WEEK_DAYS, AFTER_HOURS_OPTIONS } from '@/lib/onboarding/constants'
 import { keepValues } from '@/lib/forms'
+import { interpolate } from '@/lib/i18n/config'
+import { useI18n } from '@/lib/i18n/client'
 
 export type DayHours = { day: number; isClosed: boolean; open: string; close: string }
 type AfterHours = (typeof AFTER_HOURS_OPTIONS)[number]['value']
@@ -25,6 +27,8 @@ export function HoursForm({
   initialAfterHours: AfterHours
   initialTransferNumber: string
 }) {
+  const { t } = useI18n()
+  const o = t.onboarding.hours
   const [hours, setHours] = useState(initialHours)
   const [afterHours, setAfterHours] = useState<AfterHours>(initialAfterHours)
 
@@ -42,8 +46,9 @@ export function HoursForm({
     <form onSubmit={keepValues(action)} className="space-y-8">
       {/* Weekly schedule */}
       <fieldset className="space-y-2" disabled={pending}>
-        <legend className="mb-3 text-sm font-medium">Opening hours</legend>
-        {WEEK_DAYS.map(({ day, label }) => {
+        <legend className="mb-3 text-sm font-medium">{o.openingHours}</legend>
+        {WEEK_DAYS.map(({ day }) => {
+          const label = t.labels.weekdays[day]
           const h = hours.find((x) => x.day === day)!
           return (
             <div
@@ -62,9 +67,9 @@ export function HoursForm({
                   checked={h.isClosed}
                   onChange={(e) => toggleClosed(day, e.target.checked)}
                   className="h-4 w-4 accent-[var(--primary)]"
-                  aria-label={`${label} closed`}
+                  aria-label={interpolate(o.closedLabel, { day: label })}
                 />
-                Closed
+                {o.closed}
               </label>
 
               <div className="col-span-2 flex items-center gap-2 sm:col-span-1">
@@ -73,16 +78,16 @@ export function HoursForm({
                   name={`day-${day}-open`}
                   defaultValue={h.open}
                   disabled={h.isClosed}
-                  aria-label={`${label} opens`}
+                  aria-label={interpolate(o.opens, { day: label })}
                   className="w-32"
                 />
-                <span className="text-sm text-muted-foreground">to</span>
+                <span className="text-sm text-muted-foreground">{o.to}</span>
                 <Input
                   type="time"
                   name={`day-${day}-close`}
                   defaultValue={h.close}
                   disabled={h.isClosed}
-                  aria-label={`${label} closes`}
+                  aria-label={interpolate(o.closes, { day: label })}
                   className="w-32"
                 />
               </div>
@@ -93,7 +98,7 @@ export function HoursForm({
 
       {/* After-hours behavior */}
       <fieldset className="space-y-3" disabled={pending}>
-        <legend className="mb-3 text-sm font-medium">When someone calls after hours</legend>
+        <legend className="mb-3 text-sm font-medium">{o.afterHours}</legend>
         {AFTER_HOURS_OPTIONS.map((opt) => (
           <label
             key={opt.value}
@@ -110,13 +115,13 @@ export function HoursForm({
               onChange={() => setAfterHours(opt.value)}
               className="h-4 w-4 accent-[var(--primary)]"
             />
-            {opt.label}
+            {t.labels.afterHours[opt.value]}
           </label>
         ))}
 
         {afterHours === 'transfer' && (
           <div className="space-y-2 pt-1">
-            <Label htmlFor="transfer_number">Forward calls to</Label>
+            <Label htmlFor="transfer_number">{o.forwardTo}</Label>
             <Input
               id="transfer_number"
               name="transfer_number"

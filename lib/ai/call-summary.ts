@@ -31,7 +31,11 @@ function anthropic() {
 }
 
 /** Returns null when there is nothing to summarise or the request is declined. */
-export async function summarizeCall(transcript: TranscriptLine[], businessName: string): Promise<CallSummary | null> {
+export async function summarizeCall(
+  transcript: TranscriptLine[],
+  businessName: string,
+  language = 'English'
+): Promise<CallSummary | null> {
   if (!transcript.some((l) => l.role === 'caller')) return null
 
   const conversation = transcript
@@ -48,7 +52,7 @@ export async function summarizeCall(transcript: TranscriptLine[], businessName: 
     output_config: { effort: 'low', format: betaZodOutputFormat(CallSummarySchema) },
     system:
       'You summarise phone calls handled by an AI receptionist for a small business. ' +
-      'Write for the business owner, in English, factually — only what was said on the call.',
+      `Write the summary for the business owner in ${language}, factually — only what was said on the call.`,
     messages: [
       {
         role: 'user',

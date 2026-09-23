@@ -6,6 +6,7 @@ import { Loader2, Mic, PhoneOff } from 'lucide-react'
 import type VapiType from '@vapi-ai/web'
 import { Button } from '@/components/ui/button'
 import { prepareTestCallAction } from '@/lib/actions/agent'
+import { useI18n } from '@/lib/i18n/client'
 
 type Line = { role: 'assistant' | 'user'; text: string }
 type Status = 'idle' | 'connecting' | 'live'
@@ -18,6 +19,8 @@ const PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY
 // =============================================================================
 export function TestCall() {
   const vapiRef = useRef<VapiType | null>(null)
+  const { t } = useI18n()
+  const a = t.agent
   const [status, setStatus] = useState<Status>('idle')
   const [speaking, setSpeaking] = useState(false)
   const [lines, setLines] = useState<Line[]>([])
@@ -33,7 +36,7 @@ export function TestCall() {
     // Pushes the latest saved settings to Vapi first
     const prepared = await prepareTestCallAction()
     if (!prepared.success || !prepared.assistantId) {
-      toast.error(prepared.error ?? 'Could not start the test call')
+      toast.error(prepared.error ?? t.errors.testCallFailed)
       setStatus('idle')
       return
     }
@@ -57,7 +60,7 @@ export function TestCall() {
     })
     vapi.on('error', (err: unknown) => {
       console.error('[test-call]', err)
-      toast.error('The test call hit an error. Check microphone access and try again.')
+      toast.error(a.testError)
       setStatus('idle')
     })
 
@@ -65,7 +68,7 @@ export function TestCall() {
       await vapi.start(prepared.assistantId)
     } catch (err) {
       console.error('[test-call] start failed', err)
-      toast.error('Could not start the call. Allow microphone access and try again.')
+      toast.error(a.testStartError)
       setStatus('idle')
     }
   }
@@ -78,21 +81,19 @@ export function TestCall() {
     <div className="space-y-3 rounded-xl border bg-card p-5">
       <div className="flex items-center gap-2">
         <Mic className="h-4 w-4 text-primary" />
-        <h2 className="text-sm font-medium">Test your receptionist</h2>
+        <h2 className="text-sm font-medium">{a.testTitle}</h2>
       </div>
 
       {!PUBLIC_KEY ? (
-        <p className="text-sm text-muted-foreground">Browser test calls need the Vapi public key to be configured.</p>
+        <p className="text-sm text-muted-foreground">{a.testNoKey}</p>
       ) : (
         <>
-          <p className="text-sm text-muted-foreground">
-            Talk to it from your browser using your microphone — uses your saved settings.
-          </p>
+          <p className="text-sm text-muted-foreground">{a.testText}</p>
 
           {status === 'live' ? (
             <Button type="button" variant="destructive" className="w-full" onClick={stop}>
               <PhoneOff className="mr-1.5 h-4 w-4" />
-              End call
+              {a.endCall}
             </Button>
           ) : (
             <Button
@@ -104,12 +105,12 @@ export function TestCall() {
               {status === 'connecting' ? (
                 <>
                   <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                  Connecting…
+                  {a.connecting}
                 </>
               ) : (
                 <>
                   <Mic className="mr-1.5 h-4 w-4" />
-                  Start test call
+                  {a.startCall}
                 </>
               )}
             </Button>
@@ -120,7 +121,7 @@ export function TestCall() {
               <span
                 className={`h-2 w-2 rounded-full bg-neon shadow-[0_0_8px_var(--neon)] ${speaking ? 'animate-pulse' : ''}`}
               />
-              {speaking ? 'Receptionist is speaking…' : 'Listening…'}
+              {speaking ? a.speaking : a.listening}
             </p>
           )}
 

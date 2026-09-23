@@ -6,7 +6,9 @@ import { z } from 'zod'
 import { createClient, getAuthenticatedUser } from '@/lib/supabase/server'
 import { TIMEZONES, INDUSTRIES } from '@/lib/onboarding/constants'
 import type { ActionResult } from '@/lib/actions/auth'
-import { defaultGreeting } from '@/lib/agent/constants'
+import { defaultGreeting, isDefaultGreeting } from '@/lib/agent/constants'
+import { getI18n } from '@/lib/i18n/server'
+import type { Dictionary } from '@/lib/i18n/dictionaries/en'
 
 // =============================================================================
 // Helpers
@@ -34,16 +36,16 @@ async function requireOrg() {
 // STEP 1 — Business details
 // =============================================================================
 
-const businessSchema = z.object({
-  name: z.string().trim().min(2, 'Business name must be at least 2 characters').max(100),
-  industry: z.enum(INDUSTRIES, { errorMap: () => ({ message: 'Choose an industry' }) }),
-  timezone: z.enum(TIMEZONES, { errorMap: () => ({ message: 'Choose a timezone' }) }),
+const businessSchema = (e: Dictionary['errors']) => z.object({
+  name: z.string().trim().min(2, e.businessNameMin).max(100),
+  industry: z.enum(INDUSTRIES, { errorMap: () => ({ message: e.chooseIndustry }) }),
+  timezone: z.enum(TIMEZONES, { errorMap: () => ({ message: e.chooseTimezone }) }),
   phone: optionalText(40),
   email: z
     .string()
     .trim()
     .max(200)
-    .refine((v) => v === '' || z.string().email().safeParse(v).success, 'Invalid email address')
+    .refine((v) => v === '' || z.string().email().safeParse(v).success, e.emailInvalid)
     .transform((v) => (v === '' ? null : v)),
   website: optionalText(200),
   address: optionalText(300),
@@ -51,7 +53,8 @@ const businessSchema = z.object({
 })
 
 export async function saveBusinessAction(formData: FormData): Promise<ActionResult> {
-  const parsed = businessSchema.safeParse({
+  const { t } = await getI18n()
+  const parsed = businessSchema(t.errors).safeParse({
     name: formData.get('name') ?? '',
     industry: formData.get('industry') ?? '',
     timezone: formData.get('timezone') ?? '',
@@ -69,6 +72,10 @@ export async function saveBusinessAction(formData: FormData): Promise<ActionResu
   const supabase = await createClient()
   const { name, industry, timezone, ...info } = parsed.data
 
+  // Read the current name first: the greeting may still be the default built from it
+  const { data: previous } = await supabase.from('organizations').select('name').eq('id', orgId).single()
+  const previousName = previous?.name ?? name
+
   const { error: orgError } = await supabase
     .from('organizations')
     .update({ name, industry, timezone })
@@ -81,15 +88,22 @@ export async function saveBusinessAction(formData: FormData): Promise<ActionResu
 
   if (orgError || infoError) {
     console.error('[onboarding.business]', orgError?.message ?? infoError?.message)
-    return { success: false, error: 'Could not save your business details. Please try again.' }
+    return { success: false, error: t.errors.saveBusinessFailed }
   }
 
-  // Keep the draft agent's greeting in sync with the (possibly renamed) business
-  await supabase
+  // Keep the draft agent's greeting in sync with the (possibly renamed) business —
+  // only while it's still an auto-generated default, in the agent's own language
+  const { data: agent } = await supabase
     .from('ai_agents')
-    .update({ greeting: defaultGreeting('en-US', name) })
+    .select('greeting, language, status')
     .eq('organization_id', orgId)
-    .eq('status', 'draft')
+    .single()
+  if (agent?.status === 'draft' && (!agent.greeting || isDefaultGreeting(agent.greeting, previousName))) {
+    await supabase
+      .from('ai_agents')
+      .update({ greeting: defaultGreeting(agent.language, name) })
+      .eq('organization_id', orgId)
+  }
 
   redirect('/onboarding/hours')
 }
@@ -99,6 +113,7 @@ export async function saveBusinessAction(formData: FormData): Promise<ActionResu
 // =============================================================================
 
 export async function saveHoursAction(formData: FormData): Promise<ActionResult> {
+  const { t } = await getI18n()
   const rows: { day_of_week: number; is_closed: boolean; open_time: string | null; close_time: string | null }[] = []
 
   for (let day = 0; day <= 6; day++) {
@@ -108,10 +123,10 @@ export async function saveHoursAction(formData: FormData): Promise<ActionResult>
 
     if (!isClosed) {
       if (!TIME_RE.test(open) || !TIME_RE.test(close)) {
-        return { success: false, error: 'Enter opening and closing times for every open day.' }
+        return { success: false, error: t.errors.hoursMissing }
       }
       if (open >= close) {
-        return { success: false, error: 'Closing time must be after opening time.' }
+        return { success: false, error: t.errors.hoursOrder }
       }
     }
 
@@ -124,16 +139,16 @@ export async function saveHoursAction(formData: FormData): Promise<ActionResult>
   }
 
   if (rows.every((r) => r.is_closed)) {
-    return { success: false, error: 'Your business needs to be open at least one day.' }
+    return { success: false, error: t.errors.hoursAllClosed }
   }
 
   const afterHours = String(formData.get('after_hours_behavior') ?? 'ai')
   if (!['ai', 'voicemail', 'transfer'].includes(afterHours)) {
-    return { success: false, error: 'Choose what happens after hours.' }
+    return { success: false, error: t.errors.chooseAfterHours }
   }
   const transferNumber = String(formData.get('transfer_number') ?? '').trim()
   if (afterHours === 'transfer' && transferNumber.length < 5) {
-    return { success: false, error: 'Enter the number calls should be forwarded to.' }
+    return { success: false, error: t.errors.transferMissing }
   }
 
   const { orgId } = await requireOrg()
@@ -156,7 +171,7 @@ export async function saveHoursAction(formData: FormData): Promise<ActionResult>
 
   if (hoursError || infoError) {
     console.error('[onboarding.hours]', hoursError?.message ?? infoError?.message)
-    return { success: false, error: 'Could not save your hours. Please try again.' }
+    return { success: false, error: t.errors.saveHoursFailed }
   }
 
   redirect('/onboarding/services')
@@ -194,13 +209,14 @@ function parseJsonField(formData: FormData, key: string): unknown {
 }
 
 export async function completeOnboardingAction(formData: FormData): Promise<ActionResult> {
+  const { t } = await getI18n()
   const services = servicesSchema.safeParse(parseJsonField(formData, 'services'))
   if (!services.success) {
-    return { success: false, error: 'Every service needs a name (duration 5–600 minutes).' }
+    return { success: false, error: t.errors.servicesInvalid }
   }
   const faqs = faqsSchema.safeParse(parseJsonField(formData, 'faqs'))
   if (!faqs.success) {
-    return { success: false, error: 'Every FAQ needs a question (3+ characters) and an answer.' }
+    return { success: false, error: t.errors.faqsInvalid }
   }
 
   const { orgId, userId } = await requireOrg()
@@ -227,7 +243,7 @@ export async function completeOnboardingAction(formData: FormData): Promise<Acti
   const failed = infoError ?? deleteError ?? faqError ?? profileError
   if (failed) {
     console.error('[onboarding.complete]', failed.message)
-    return { success: false, error: 'Could not finish setup. Please try again.' }
+    return { success: false, error: t.errors.finishFailed }
   }
 
   revalidatePath('/dashboard', 'layout')

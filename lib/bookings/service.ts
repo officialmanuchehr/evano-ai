@@ -122,9 +122,12 @@ export type BookingInput = {
   notes?: string | null
 }
 
+export type BookingErrorCode = 'badDate' | 'badTime' | 'past' | 'closed' | 'taken' | 'saveFailed'
+
 export type BookingResult =
   | { ok: true; bookingId: string; startTime: string; dateLabel: string; time: string; service: string | null }
-  | { ok: false; error: string }
+  // `error` is English (read by the voice AI); `code` + `vars` let the dashboard translate it
+  | { ok: false; error: string; code: BookingErrorCode; vars?: Record<string, string | number> }
 
 /**
  * Create (or, with `rescheduleId`, move) a booking after re-checking that the
@@ -134,22 +137,23 @@ export type BookingResult =
 export async function saveBooking(
   orgId: string,
   input: BookingInput,
-  opts: { createdBy: 'ai' | 'human'; agentId?: string | null; callId?: string | null; rescheduleId?: string; allowOutsideHours?: boolean }
+  opts: { createdBy: 'ai' | 'human'; agentId?: string | null; callId?: string | null; rescheduleId?: string; allowOutsideHours?: boolean; lang?: string }
 ): Promise<BookingResult> {
   const { timeZone, services, hours } = await loadOrgContext(orgId)
 
   const date = resolveDate(input.date, timeZone)
-  if (!date) return { ok: false, error: 'That date was not understood. Use a date like 2026-09-25.' }
+  if (!date) return { ok: false, code: 'badDate', error: 'That date was not understood. Use a date like 2026-09-25.' }
   const t = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec(input.time.trim())
-  if (!t) return { ok: false, error: 'That time was not understood. Use a time like 14:30.' }
+  if (!t) return { ok: false, code: 'badTime', error: 'That time was not understood. Use a time like 14:30.' }
 
   const service = matchService(services, input.service ?? undefined)
   const durationMin = service?.duration ?? DEFAULT_DURATION_MIN
   const start = zonedToUtc(date, +t[1], +t[2], timeZone)
   const end = new Date(start.getTime() + durationMin * 60_000)
   const dateLabel = formatDayLabel(date, timeZone)
+  const localDateLabel = formatDayLabel(date, timeZone, opts.lang ?? 'en-GB') // for dashboard messages
 
-  if (start.getTime() < Date.now()) return { ok: false, error: 'That time is in the past.' }
+  if (start.getTime() < Date.now()) return { ok: false, code: 'past', error: 'That time is in the past.' }
 
   if (!opts.allowOutsideHours) {
     const dayHours = hours.find((h) => h.day_of_week === weekdayOf(date))
@@ -157,13 +161,18 @@ export async function saveBooking(
     const minutes = +t[1] * 60 + +t[2]
     const toMin = (s: string) => +s.slice(0, 2) * 60 + +s.slice(3, 5)
     if (!open || minutes < toMin(dayHours!.open_time!) || minutes + durationMin > toMin(dayHours!.close_time!)) {
-      return { ok: false, error: `The business is not open for a ${durationMin}-minute appointment at ${input.time} on ${dateLabel}.` }
+      return {
+        ok: false,
+        code: 'closed',
+        vars: { duration: durationMin, time: input.time, date: localDateLabel },
+        error: `The business is not open for a ${durationMin}-minute appointment at ${input.time} on ${dateLabel}.`,
+      }
     }
   }
 
   const busy = await busyOn(orgId, date, timeZone, opts.rescheduleId)
   if (busy.some((b) => start < b.end && end > b.start)) {
-    return { ok: false, error: `${input.time} on ${dateLabel} is already booked.` }
+    return { ok: false, code: 'taken', vars: { time: input.time, date: localDateLabel }, error: `${input.time} on ${dateLabel} is already booked.` }
   }
 
   const db = createAdminClient()
@@ -199,7 +208,7 @@ export async function saveBooking(
 
   if (error || !data) {
     console.error('[bookings.save]', error?.message)
-    return { ok: false, error: 'The booking could not be saved.' }
+    return { ok: false, code: 'saveFailed', error: 'The booking could not be saved.' }
   }
 
   await syncCalendarEvent(orgId, data.id, {

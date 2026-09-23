@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient, getAuthenticatedUser } from '@/lib/supabase/server'
 import { StepCard } from '@/components/onboarding/step-card'
+import { getI18n } from '@/lib/i18n/server'
 import { BusinessForm } from '@/components/onboarding/business-form'
 
 // =============================================================================
@@ -9,6 +10,7 @@ import { BusinessForm } from '@/components/onboarding/business-form'
 export default async function OnboardingBusinessPage() {
   const auth = await getAuthenticatedUser()
   if (!auth) redirect('/auth/login')
+  const { t } = await getI18n()
 
   const supabase = await createClient()
   const { data: info } = await supabase
@@ -20,10 +22,7 @@ export default async function OnboardingBusinessPage() {
   const org = auth.profile.organizations
 
   return (
-    <StepCard
-      title="Tell us about your business"
-      description="Your AI receptionist uses this to introduce your business and answer basic questions."
-    >
+    <StepCard title={t.onboarding.business.title} description={t.onboarding.business.description}>
       <BusinessForm
         defaults={{
           name: org?.name ?? '',

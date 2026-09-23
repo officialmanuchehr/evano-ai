@@ -6,8 +6,13 @@ import { createClient, getAuthenticatedUser } from '@/lib/supabase/server'
 import { buttonVariants } from '@/components/ui/button'
 import { CallStatusBadge, PurposeLabel, needsFollowUp } from '@/components/calls/call-badges'
 import { formatDate, formatDuration, formatTime } from '@/lib/format'
+import { getI18n } from '@/lib/i18n/server'
+import { INTL_LOCALE } from '@/lib/i18n/config'
 
-export const metadata: Metadata = { title: 'Call details' }
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n()
+  return { title: t.calls.summary }
+}
 
 type TranscriptLine = { role: 'assistant' | 'caller'; text: string }
 
@@ -33,6 +38,9 @@ export default async function CallDetailPage({ params }: { params: Promise<{ id:
     .maybeSingle()
 
   if (!call) notFound()
+  const { locale, t } = await getI18n()
+  const c = t.calls
+  const lang = INTL_LOCALE[locale]
 
   const timeZone = auth.profile.organizations?.timezone ?? 'UTC'
   const startedAt = call.started_at ?? call.created_at
@@ -43,15 +51,15 @@ export default async function CallDetailPage({ params }: { params: Promise<{ id:
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-6 lg:p-8">
       <Link href="/dashboard/calls" className={buttonVariants({ variant: 'ghost', size: 'sm', className: '-ml-2' })}>
-        <ArrowLeft className="h-4 w-4" /> All calls
+        <ArrowLeft className="h-4 w-4" /> {c.allCalls}
       </Link>
 
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tabular-nums">{call.caller_number ?? 'Unknown caller'}</h1>
+          <h1 className="text-2xl font-semibold tabular-nums">{call.caller_number ?? t.common.unknownCaller}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {formatDate(startedAt, timeZone)} · {formatTime(startedAt, timeZone)} · {formatDuration(call.duration_seconds)}
+            {formatDate(startedAt, timeZone, lang)} · {formatTime(startedAt, timeZone, lang)} · {formatDuration(call.duration_seconds)}
           </p>
         </div>
         <div className="flex items-center gap-2 text-sm">
@@ -66,42 +74,40 @@ export default async function CallDetailPage({ params }: { params: Promise<{ id:
       <section className="rounded-xl border bg-card p-5">
         <div className="mb-2 flex items-center justify-between gap-2">
           <h2 className="flex items-center gap-2 text-sm font-medium">
-            <Sparkles className="h-4 w-4 text-primary" /> Summary
+            <Sparkles className="h-4 w-4 text-primary" /> {c.summary}
           </h2>
           {followUp && (
             <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground">
-              <Flag className="h-3 w-3" /> Follow-up needed
+              <Flag className="h-3 w-3" /> {c.followUp}
             </span>
           )}
         </div>
         <p className="text-sm leading-relaxed">
           {summaryText ??
-            (call.status === 'in_progress'
-              ? 'This call is still in progress.'
-              : 'No summary — the caller didn’t say anything, or the summary is still being written.')}
+            (call.status === 'in_progress' ? c.stillInProgress : c.noSummaryLong)}
         </p>
       </section>
 
       {/* Recording */}
       {call.recording_url && (
         <section className="rounded-xl border bg-card p-5">
-          <h2 className="mb-3 text-sm font-medium">Recording</h2>
+          <h2 className="mb-3 text-sm font-medium">{c.recording}</h2>
           <audio controls preload="none" src={call.recording_url} className="w-full">
-            <a href={call.recording_url}>Download recording</a>
+            <a href={call.recording_url}>{c.download}</a>
           </audio>
         </section>
       )}
 
       {/* Transcript */}
       <section className="rounded-xl border bg-card p-5">
-        <h2 className="mb-4 text-sm font-medium">Conversation</h2>
+        <h2 className="mb-4 text-sm font-medium">{c.conversation}</h2>
         {transcript.length ? (
           <ol className="space-y-3 text-sm">
             {transcript.map((line, i) => (
               <li key={i} className={line.role === 'caller' ? 'flex justify-end' : 'flex'}>
                 <div className="max-w-[85%]">
                   <p className={`mb-0.5 text-xs text-muted-foreground ${line.role === 'caller' ? 'text-right' : ''}`}>
-                    {line.role === 'caller' ? 'Caller' : 'Receptionist'}
+                    {line.role === 'caller' ? c.caller : t.agent.receptionist}
                   </p>
                   <p
                     className={
@@ -117,7 +123,7 @@ export default async function CallDetailPage({ params }: { params: Promise<{ id:
             ))}
           </ol>
         ) : (
-          <p className="text-sm text-muted-foreground">No conversation was recorded for this call.</p>
+          <p className="text-sm text-muted-foreground">{c.noConversation}</p>
         )}
       </section>
     </div>

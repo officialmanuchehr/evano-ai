@@ -9,6 +9,7 @@ import { StepActions, FieldHint } from '@/components/onboarding/step-card'
 import { saveBusinessAction } from '@/lib/actions/onboarding'
 import { INDUSTRIES, TIMEZONES, selectClassName } from '@/lib/onboarding/constants'
 import { keepValues } from '@/lib/forms'
+import { useI18n } from '@/lib/i18n/client'
 
 export type BusinessFormDefaults = {
   name: string
@@ -26,6 +27,8 @@ export type BusinessFormDefaults = {
 // =============================================================================
 export function BusinessForm({ defaults }: { defaults: BusinessFormDefaults }) {
   const timezoneRef = useRef<HTMLSelectElement>(null)
+  const { t } = useI18n()
+  const b = t.onboarding.business
 
   const [, action, pending] = useActionState(async (_: unknown, formData: FormData) => {
     const result = await saveBusinessAction(formData)
@@ -45,14 +48,14 @@ export function BusinessForm({ defaults }: { defaults: BusinessFormDefaults }) {
   return (
     <form onSubmit={keepValues(action)} className="space-y-5">
       <div className="space-y-2">
-        <Label htmlFor="name">Business name</Label>
+        <Label htmlFor="name">{b.name}</Label>
         <Input id="name" name="name" defaultValue={defaults.name} required disabled={pending} />
-        <FieldHint>Your receptionist greets callers with this name.</FieldHint>
+        <FieldHint>{b.nameHint}</FieldHint>
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="industry">Industry</Label>
+          <Label htmlFor="industry">{b.industry}</Label>
           <select
             id="industry"
             name="industry"
@@ -62,18 +65,18 @@ export function BusinessForm({ defaults }: { defaults: BusinessFormDefaults }) {
             className={selectClassName}
           >
             <option value="" disabled>
-              Choose…
+              {b.choose}
             </option>
             {INDUSTRIES.map((i) => (
               <option key={i} value={i}>
-                {i}
+                {t.labels.industries[i] ?? i}
               </option>
             ))}
           </select>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="timezone">Timezone</Label>
+          <Label htmlFor="timezone">{b.timezone}</Label>
           <select
             id="timezone"
             name="timezone"
@@ -94,37 +97,37 @@ export function BusinessForm({ defaults }: { defaults: BusinessFormDefaults }) {
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="phone">Business phone</Label>
+          <Label htmlFor="phone">{b.phone}</Label>
           <Input id="phone" name="phone" type="tel" placeholder="+992 90 000 0000" defaultValue={defaults.phone ?? ''} disabled={pending} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="email">Contact email</Label>
+          <Label htmlFor="email">{b.email}</Label>
           <Input id="email" name="email" type="email" placeholder="hello@yourbusiness.com" defaultValue={defaults.email ?? ''} disabled={pending} />
         </div>
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="website">Website</Label>
+          <Label htmlFor="website">{b.website}</Label>
           <Input id="website" name="website" placeholder="yourbusiness.com" defaultValue={defaults.website ?? ''} disabled={pending} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="address">Address</Label>
-          <Input id="address" name="address" placeholder="Street, city" defaultValue={defaults.address ?? ''} disabled={pending} />
+          <Label htmlFor="address">{b.address}</Label>
+          <Input id="address" name="address" placeholder={b.addressPlaceholder} defaultValue={defaults.address ?? ''} disabled={pending} />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="description">What does your business do?</Label>
+        <Label htmlFor="description">{b.about}</Label>
         <Textarea
           id="description"
           name="description"
           rows={3}
-          placeholder="e.g. Family dental clinic offering check-ups, cleaning and whitening."
+          placeholder={b.aboutPlaceholder}
           defaultValue={defaults.description ?? ''}
           disabled={pending}
         />
-        <FieldHint>A sentence or two — the AI uses this to describe you to callers.</FieldHint>
+        <FieldHint>{b.aboutHint}</FieldHint>
       </div>
 
       <StepActions pending={pending} />

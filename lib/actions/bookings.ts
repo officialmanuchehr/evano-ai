@@ -6,6 +6,9 @@ import { z } from 'zod'
 import { createClient, getAuthenticatedUser } from '@/lib/supabase/server'
 import { cancelBooking, saveBooking } from '@/lib/bookings/service'
 import type { ActionResult } from '@/lib/actions/auth'
+import { getI18n } from '@/lib/i18n/server'
+import { INTL_LOCALE, interpolate } from '@/lib/i18n/config'
+import type { Dictionary } from '@/lib/i18n/dictionaries/en'
 
 // =============================================================================
 // Dashboard booking actions — same rules as the AI (lib/bookings/service.ts),
@@ -18,18 +21,18 @@ async function requireOrgId() {
   return auth.profile.organization_id
 }
 
-const bookingSchema = z.object({
-  customerName: z.string().trim().min(2, 'Enter the customer’s name').max(120),
+const bookingSchema = (e: Dictionary['errors']) => z.object({
+  customerName: z.string().trim().min(2, e.customerName).max(120),
   customerPhone: z.string().trim().max(40),
   service: z.string().trim().max(100),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Choose a date'),
-  time: z.string().regex(/^\d{2}:\d{2}$/, 'Choose a time'),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, e.chooseDate),
+  time: z.string().regex(/^\d{2}:\d{2}$/, e.chooseTime),
   notes: z.string().trim().max(1000),
   allowOutsideHours: z.boolean(),
 })
 
-function parseBooking(formData: FormData) {
-  return bookingSchema.safeParse({
+function parseBooking(formData: FormData, e: Dictionary['errors']) {
+  return bookingSchema(e).safeParse({
     customerName: formData.get('customerName') ?? '',
     customerPhone: formData.get('customerPhone') ?? '',
     service: formData.get('service') ?? '',
@@ -41,26 +44,33 @@ function parseBooking(formData: FormData) {
 }
 
 export async function createBookingAction(formData: FormData): Promise<ActionResult> {
-  const parsed = parseBooking(formData)
+  const { locale, t } = await getI18n()
+  const parsed = parseBooking(formData, t.errors)
   if (!parsed.success) return { success: false, error: parsed.error.errors[0].message }
   const orgId = await requireOrgId()
 
   const { allowOutsideHours, ...input } = parsed.data
-  const result = await saveBooking(orgId, input, { createdBy: 'human', allowOutsideHours })
-  if (!result.ok) return { success: false, error: result.error }
+  const result = await saveBooking(orgId, input, { createdBy: 'human', allowOutsideHours, lang: INTL_LOCALE[locale] })
+  if (!result.ok) return { success: false, error: interpolate(t.errors.booking[result.code], result.vars) }
 
   revalidatePath('/dashboard', 'layout')
   redirect('/dashboard/bookings')
 }
 
 export async function rescheduleBookingAction(bookingId: string, formData: FormData): Promise<ActionResult> {
-  const parsed = parseBooking(formData)
+  const { locale, t } = await getI18n()
+  const parsed = parseBooking(formData, t.errors)
   if (!parsed.success) return { success: false, error: parsed.error.errors[0].message }
   const orgId = await requireOrgId()
 
   const { allowOutsideHours, ...input } = parsed.data
-  const result = await saveBooking(orgId, input, { createdBy: 'human', rescheduleId: bookingId, allowOutsideHours })
-  if (!result.ok) return { success: false, error: result.error }
+  const result = await saveBooking(orgId, input, {
+    createdBy: 'human',
+    rescheduleId: bookingId,
+    allowOutsideHours,
+    lang: INTL_LOCALE[locale],
+  })
+  if (!result.ok) return { success: false, error: interpolate(t.errors.booking[result.code], result.vars) }
 
   revalidatePath('/dashboard', 'layout')
   redirect('/dashboard/bookings')
@@ -72,12 +82,13 @@ export async function setBookingStatusAction(
   bookingId: string,
   status: (typeof STATUS_CHANGES)[number]
 ): Promise<ActionResult> {
-  if (!STATUS_CHANGES.includes(status)) return { success: false, error: 'Invalid status' }
+  const { t } = await getI18n()
+  if (!STATUS_CHANGES.includes(status)) return { success: false, error: t.errors.bookingUpdateFailed }
   const orgId = await requireOrgId()
 
   // Cancelling also removes the Google Calendar event
   if (status === 'cancelled') {
-    if (!(await cancelBooking(orgId, bookingId))) return { success: false, error: 'Could not update the booking.' }
+    if (!(await cancelBooking(orgId, bookingId))) return { success: false, error: t.errors.bookingUpdateFailed }
     revalidatePath('/dashboard', 'layout')
     return { success: true }
   }
@@ -90,7 +101,7 @@ export async function setBookingStatusAction(
     .eq('id', bookingId)
     .eq('organization_id', orgId)
     .select('id')
-  if (error || !data?.length) return { success: false, error: 'Could not update the booking.' }
+  if (error || !data?.length) return { success: false, error: t.errors.bookingUpdateFailed }
 
   revalidatePath('/dashboard', 'layout')
   return { success: true }

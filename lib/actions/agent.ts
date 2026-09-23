@@ -8,6 +8,9 @@ import { LANGUAGES, LIMITS, RESPONSE_LENGTHS, TONES, VOICE_OPTIONS } from '@/lib
 import { syncAssistant } from '@/lib/vapi/sync'
 import { setPhoneNumberAssistant, VapiError } from '@/lib/vapi/client'
 import type { ActionResult } from '@/lib/actions/auth'
+import { getI18n } from '@/lib/i18n/server'
+import { interpolate } from '@/lib/i18n/config'
+import type { Dictionary } from '@/lib/i18n/dictionaries/en'
 
 // =============================================================================
 // Helpers
@@ -31,26 +34,27 @@ function vapiErrorMessage(err: unknown, fallback: string) {
 // Save receptionist settings (and push them to Vapi if an assistant exists)
 // =============================================================================
 
-const agentSchema = z.object({
-  name: z.string().trim().min(2, 'Name must be at least 2 characters').max(LIMITS.name),
+const agentSchema = (e: Dictionary['errors']) => z.object({
+  name: z.string().trim().min(2, e.nameMin).max(LIMITS.name),
   greeting: z
     .string()
     .trim()
-    .min(10, 'Greeting must be at least 10 characters')
-    .max(LIMITS.greeting, `Greeting must be under ${LIMITS.greeting} characters`),
-  tone: z.enum(values(TONES), { errorMap: () => ({ message: 'Choose a tone' }) }),
-  response_length: z.enum(values(RESPONSE_LENGTHS), { errorMap: () => ({ message: 'Choose an answer length' }) }),
-  language: z.enum(values(LANGUAGES), { errorMap: () => ({ message: 'Choose a language' }) }),
-  voice_id: z.string().refine((v) => VOICE_OPTIONS.some((o) => o.id === v), 'Choose a voice'),
+    .min(10, e.greetingMin)
+    .max(LIMITS.greeting, interpolate(e.greetingMax, { max: LIMITS.greeting })),
+  tone: z.enum(values(TONES), { errorMap: () => ({ message: e.chooseTone }) }),
+  response_length: z.enum(values(RESPONSE_LENGTHS), { errorMap: () => ({ message: e.chooseLength }) }),
+  language: z.enum(values(LANGUAGES), { errorMap: () => ({ message: e.chooseLanguage }) }),
+  voice_id: z.string().refine((v) => VOICE_OPTIONS.some((o) => o.id === v), e.chooseVoice),
   system_prompt: z
     .string()
     .trim()
-    .max(LIMITS.instructions, `Instructions must be under ${LIMITS.instructions} characters`)
+    .max(LIMITS.instructions, interpolate(e.instructionsMax, { max: LIMITS.instructions }))
     .transform((v) => (v === '' ? null : v)),
 })
 
 export async function updateAgentAction(formData: FormData): Promise<ActionResult> {
-  const parsed = agentSchema.safeParse({
+  const { t } = await getI18n()
+  const parsed = agentSchema(t.errors).safeParse({
     name: formData.get('name') ?? '',
     greeting: formData.get('greeting') ?? '',
     tone: formData.get('tone') ?? '',
@@ -63,7 +67,7 @@ export async function updateAgentAction(formData: FormData): Promise<ActionResul
     return { success: false, error: parsed.error.errors[0].message }
   }
   if (!VOICE_OPTIONS.find((o) => o.id === parsed.data.voice_id)!.languages.includes(parsed.data.language)) {
-    return { success: false, error: 'Choose a voice for the selected language.' }
+    return { success: false, error: t.errors.voiceLanguage }
   }
 
   const orgId = await requireOrgId()
@@ -78,7 +82,7 @@ export async function updateAgentAction(formData: FormData): Promise<ActionResul
 
   if (error || !data?.length) {
     console.error('[agent.update]', error?.message ?? 'no agent row for org')
-    return { success: false, error: 'Could not save your settings. Please try again.' }
+    return { success: false, error: t.errors.saveSettingsFailed }
   }
 
   // Assistant already exists in Vapi → push the new settings live
@@ -86,7 +90,7 @@ export async function updateAgentAction(formData: FormData): Promise<ActionResul
     try {
       await syncAssistant(orgId)
     } catch (err) {
-      return { success: false, error: vapiErrorMessage(err, 'Saved, but the live receptionist could not be updated') }
+      return { success: false, error: vapiErrorMessage(err, t.errors.liveUpdateFailed) }
     }
   }
 
@@ -99,12 +103,13 @@ export async function updateAgentAction(formData: FormData): Promise<ActionResul
 // =============================================================================
 
 export async function prepareTestCallAction(): Promise<ActionResult & { assistantId?: string }> {
+  const { t } = await getI18n()
   const orgId = await requireOrgId()
   try {
     const assistantId = await syncAssistant(orgId)
     return { success: true, assistantId }
   } catch (err) {
-    return { success: false, error: vapiErrorMessage(err, 'Could not prepare the test call') }
+    return { success: false, error: vapiErrorMessage(err, t.errors.testCallFailed) }
   }
 }
 
@@ -113,6 +118,7 @@ export async function prepareTestCallAction(): Promise<ActionResult & { assistan
 // =============================================================================
 
 export async function setLiveAction(live: boolean): Promise<ActionResult> {
+  const { t } = await getI18n()
   const orgId = await requireOrgId()
   const db = createAdminClient()
 
@@ -123,14 +129,14 @@ export async function setLiveAction(live: boolean): Promise<ActionResult> {
     .maybeSingle()
 
   if (!phone?.provider_number_id) {
-    return { success: false, error: 'Connect a phone number before going live.' }
+    return { success: false, error: t.errors.needPhone }
   }
 
   try {
     const assistantId = live ? await syncAssistant(orgId) : null
     await setPhoneNumberAssistant(phone.provider_number_id, assistantId)
   } catch (err) {
-    return { success: false, error: vapiErrorMessage(err, live ? 'Could not go live' : 'Could not pause') }
+    return { success: false, error: vapiErrorMessage(err, live ? t.errors.goLiveFailed : t.errors.pauseFailed) }
   }
 
   await db.from('ai_agents').update({ status: live ? 'active' : 'paused' }).eq('organization_id', orgId)

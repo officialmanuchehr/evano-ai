@@ -3,44 +3,47 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
-import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/server'
+import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { getI18n } from '@/lib/i18n/server'
+import { interpolate } from '@/lib/i18n/config'
+import { defaultGreeting } from '@/lib/agent/constants'
+import type { Dictionary } from '@/lib/i18n/dictionaries/en'
 
 // =============================================================================
-// Validation Schemas
+// Validation schemas (messages in the visitor's language)
 // =============================================================================
 
-const registerSchema = z.object({
-  fullName: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Invalid email address'),
-  password: z
+const passwordSchema = (e: Dictionary['errors']) =>
+  z
     .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number'),
-})
+    .min(8, e.passwordMin)
+    .regex(/[A-Z]/, e.passwordUpper)
+    .regex(/[0-9]/, e.passwordNumber)
 
-const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(1, 'Password is required'),
-})
+const registerSchema = (e: Dictionary['errors']) =>
+  z.object({
+    fullName: z.string().trim().min(2, e.nameMin),
+    email: z.string().email(e.emailInvalid),
+    password: passwordSchema(e),
+  })
 
-const resetPasswordSchema = z.object({
-  email: z.string().email('Invalid email address'),
-})
+const loginSchema = (e: Dictionary['errors']) =>
+  z.object({
+    email: z.string().email(e.emailInvalid),
+    password: z.string().min(1, e.passwordRequired),
+  })
 
 // =============================================================================
 // Helper: Generate org slug
 // =============================================================================
 function generateSlug(name: string): string {
-  return name
+  const base = name
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
-    .trim()
-    + '-'
-    + Math.random().toString(36).slice(2, 7)
+    .replace(/^-|-$/g, '')
+  return `${base || 'business'}-${Math.random().toString(36).slice(2, 7)}`
 }
 
 // =============================================================================
@@ -55,13 +58,12 @@ export type ActionResult = {
 // REGISTER
 // =============================================================================
 export async function registerAction(formData: FormData): Promise<ActionResult> {
-  const raw = {
-    fullName: formData.get('fullName') as string,
-    email: formData.get('email') as string,
-    password: formData.get('password') as string,
-  }
-
-  const parsed = registerSchema.safeParse(raw)
+  const { locale, t } = await getI18n()
+  const parsed = registerSchema(t.errors).safeParse({
+    fullName: formData.get('fullName') ?? '',
+    email: formData.get('email') ?? '',
+    password: formData.get('password') ?? '',
+  })
   if (!parsed.success) {
     return { success: false, error: parsed.error.errors[0].message }
   }
@@ -73,31 +75,28 @@ export async function registerAction(formData: FormData): Promise<ActionResult> 
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
     password,
-    options: {
-      data: { full_name: fullName },
-    },
+    options: { data: { full_name: fullName } },
   })
 
   if (authError) {
     if (authError.message.includes('already registered')) {
-      return { success: false, error: 'An account with this email already exists.' }
+      return { success: false, error: t.errors.accountExists }
     }
     console.error('[auth.register] signUp error:', authError.message)
-    return { success: false, error: 'Could not create account. Please try again.' }
+    return { success: false, error: t.errors.createFailed }
   }
 
   if (!authData.user) {
-    return { success: false, error: 'Could not create account. Please try again.' }
+    return { success: false, error: t.errors.createFailed }
   }
 
   // 2. Create organization + profile using admin client (bypasses RLS for initial setup)
   const adminClient = createAdminClient()
-  const orgName = fullName + "'s Business"
-  const slug = generateSlug(orgName)
+  const orgName = interpolate(t.onboarding.defaultOrgName, { name: fullName })
 
   const { data: org, error: orgError } = await adminClient
     .from('organizations')
-    .insert({ name: orgName, slug })
+    .insert({ name: orgName, slug: generateSlug(fullName) })
     .select()
     .single()
 
@@ -105,7 +104,7 @@ export async function registerAction(formData: FormData): Promise<ActionResult> 
     console.error('[auth.register] org creation error:', orgError?.message)
     // Clean up auth user on failure
     await adminClient.auth.admin.deleteUser(authData.user.id)
-    return { success: false, error: 'Could not set up your account. Please try again.' }
+    return { success: false, error: t.errors.setupFailed }
   }
 
   // 3. Create profile
@@ -121,30 +120,26 @@ export async function registerAction(formData: FormData): Promise<ActionResult> 
     console.error('[auth.register] profile creation error:', profileError.message)
     await adminClient.auth.admin.deleteUser(authData.user.id)
     await adminClient.from('organizations').delete().eq('id', org.id)
-    return { success: false, error: 'Could not set up your account. Please try again.' }
+    return { success: false, error: t.errors.setupFailed }
   }
 
-  // 4. Create default AI agent
+  // 4. Create default AI agent — speaks the language the owner signed up in
+  const agentLanguage = locale === 'ru' ? 'ru-RU' : 'en-US'
   await adminClient.from('ai_agents').insert({
     organization_id: org.id,
-    name: 'AI Receptionist',
+    name: t.onboarding.defaultAgentName,
+    language: agentLanguage,
     tone: 'professional',
     response_length: 'balanced',
     status: 'draft',
-    greeting: `Thank you for calling ${orgName}. How can I help you today?`,
+    greeting: defaultGreeting(agentLanguage, orgName),
   })
 
   // 5. Create default business_info
-  await adminClient.from('business_info').insert({
-    organization_id: org.id,
-  })
+  await adminClient.from('business_info').insert({ organization_id: org.id })
 
   // 6. Create subscription (free plan)
-  await adminClient.from('subscriptions').insert({
-    organization_id: org.id,
-    plan: 'free',
-    status: 'active',
-  })
+  await adminClient.from('subscriptions').insert({ organization_id: org.id, plan: 'free', status: 'active' })
 
   // 7. Seed default business hours (Mon–Fri 9–17, Sat–Sun closed)
   const defaultHours = [0, 1, 2, 3, 4, 5, 6].map((day) => ({
@@ -164,30 +159,23 @@ export async function registerAction(formData: FormData): Promise<ActionResult> 
 // LOGIN
 // =============================================================================
 export async function loginAction(formData: FormData): Promise<ActionResult> {
-  const raw = {
-    email: formData.get('email') as string,
-    password: formData.get('password') as string,
-  }
-
-  const parsed = loginSchema.safeParse(raw)
+  const { t } = await getI18n()
+  const parsed = loginSchema(t.errors).safeParse({
+    email: formData.get('email') ?? '',
+    password: formData.get('password') ?? '',
+  })
   if (!parsed.success) {
     return { success: false, error: parsed.error.errors[0].message }
   }
 
-  const { email, password } = parsed.data
   const supabase = await createClient()
-
-  const { error } = await supabase.auth.signInWithPassword({ email, password })
+  const { error } = await supabase.auth.signInWithPassword(parsed.data)
 
   if (error) {
-    if (error.message.includes('Invalid login credentials')) {
-      return { success: false, error: 'Incorrect email or password.' }
-    }
-    if (error.message.includes('Email not confirmed')) {
-      return { success: false, error: 'Please confirm your email address before logging in.' }
-    }
+    if (error.message.includes('Invalid login credentials')) return { success: false, error: t.errors.wrongCredentials }
+    if (error.message.includes('Email not confirmed')) return { success: false, error: t.errors.confirmEmail }
     console.error('[auth.login] error:', error.message)
-    return { success: false, error: 'Could not sign in. Please try again.' }
+    return { success: false, error: t.errors.signInFailed }
   }
 
   revalidatePath('/dashboard')
@@ -207,9 +195,8 @@ export async function logoutAction(): Promise<void> {
 // RESET PASSWORD
 // =============================================================================
 export async function resetPasswordAction(formData: FormData): Promise<ActionResult> {
-  const raw = { email: formData.get('email') as string }
-  const parsed = resetPasswordSchema.safeParse(raw)
-
+  const { t } = await getI18n()
+  const parsed = z.object({ email: z.string().email(t.errors.emailInvalid) }).safeParse({ email: formData.get('email') ?? '' })
   if (!parsed.success) {
     return { success: false, error: parsed.error.errors[0].message }
   }
@@ -222,7 +209,7 @@ export async function resetPasswordAction(formData: FormData): Promise<ActionRes
 
   if (error) {
     console.error('[auth.resetPassword] error:', error.message)
-    return { success: false, error: 'Could not send reset email. Please try again.' }
+    return { success: false, error: t.errors.resetSendFailed }
   }
 
   return { success: true }
@@ -231,36 +218,29 @@ export async function resetPasswordAction(formData: FormData): Promise<ActionRes
 // =============================================================================
 // SET NEW PASSWORD (after following the reset link — user has a recovery session)
 // =============================================================================
-const newPasswordSchema = z
-  .object({
-    password: registerSchema.shape.password,
-    confirm: z.string(),
-  })
-  .refine((v) => v.password === v.confirm, { message: 'Passwords do not match', path: ['confirm'] })
-
 export async function updatePasswordAction(formData: FormData): Promise<ActionResult> {
-  const parsed = newPasswordSchema.safeParse({
-    password: formData.get('password') ?? '',
-    confirm: formData.get('confirm') ?? '',
-  })
+  const { t } = await getI18n()
+  const parsed = z
+    .object({ password: passwordSchema(t.errors), confirm: z.string() })
+    .refine((v) => v.password === v.confirm, { message: t.errors.passwordsMismatch, path: ['confirm'] })
+    .safeParse({ password: formData.get('password') ?? '', confirm: formData.get('confirm') ?? '' })
   if (!parsed.success) {
     return { success: false, error: parsed.error.errors[0].message }
   }
 
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) {
-    return { success: false, error: 'Your reset link has expired. Please request a new one.' }
+    return { success: false, error: t.errors.resetExpired }
   }
 
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password })
   if (error) {
     console.error('[auth.updatePassword] error:', error.message)
     const sameAsOld = error.message.toLowerCase().includes('different from the old')
-    return {
-      success: false,
-      error: sameAsOld ? 'Choose a password different from your current one.' : 'Could not update your password. Please try again.',
-    }
+    return { success: false, error: sameAsOld ? t.errors.samePassword : t.errors.updatePasswordFailed }
   }
 
   revalidatePath('/dashboard', 'layout')

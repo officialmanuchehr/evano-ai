@@ -12,73 +12,40 @@ import {
 } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button'
 import { BrandMark, BrandLogo } from '@/components/brand/logo'
+import { LanguageSwitcher } from '@/components/i18n/language-switcher'
+import { getI18n } from '@/lib/i18n/server'
 import { cn } from '@/lib/utils'
 
-export const metadata: Metadata = {
-  title: { absolute: 'Evano AI — Your AI receptionist, 24/7' },
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n()
+  return { title: { absolute: t.meta.title } }
 }
 
-// =============================================================================
-// Content
-// =============================================================================
-
-const features = [
-  {
-    icon: PhoneIncoming,
-    title: 'Answers every call',
-    body: 'Picks up instantly, day or night, so callers never hear a busy tone or voicemail.',
-  },
-  {
-    icon: CalendarCheck,
-    title: 'Books appointments',
-    body: 'Checks your hours and services, then books the slot and syncs it to your calendar.',
-  },
-  {
-    icon: MessageSquareText,
-    title: 'Answers questions',
-    body: 'Prices, parking, opening hours — it replies from the FAQs and details you provide.',
-  },
-  {
-    icon: PhoneForwarded,
-    title: 'Forwards what matters',
-    body: 'Urgent or complex calls are transferred to you or your team straight away.',
-  },
-  {
-    icon: Moon,
-    title: 'Works after hours',
-    body: 'Take messages, book, or forward — you decide what happens when you are closed.',
-  },
-  {
-    icon: LayoutDashboard,
-    title: 'Everything in one place',
-    body: 'Every call, summary and booking in a simple dashboard you can check anytime.',
-  },
-]
-
-const steps = [
-  { title: 'Tell us about your business', body: 'Name, services and the questions customers usually ask.' },
-  { title: 'Set your hours', body: 'Choose when you are open and what happens after hours.' },
-  { title: 'Connect your number', body: 'Forward your line to Evano AI and it starts answering.' },
-]
+// Icons in the same order as t.home.features
+const FEATURE_ICONS = [PhoneIncoming, CalendarCheck, MessageSquareText, PhoneForwarded, Moon, LayoutDashboard]
 
 // =============================================================================
 // Page
 // =============================================================================
-export default function HomePage() {
+export default async function HomePage() {
+  const { t } = await getI18n()
+  const h = t.home
+
   return (
     <div className="min-h-screen bg-background">
       {/* ---------------------------------------------------------------- Nav */}
       <header className="sticky top-0 z-40 border-b bg-background/75 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" aria-label="Evano AI home">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-4 sm:px-6">
+          <Link href="/" aria-label="Evano AI">
             <BrandLogo />
           </Link>
           <nav className="flex items-center gap-2">
+            <LanguageSwitcher className="hidden sm:inline-flex" />
             <Link href="/auth/login" className={buttonVariants({ variant: 'ghost' })}>
-              Sign in
+              {h.signIn}
             </Link>
             <Link href="/auth/register" className={cn(buttonVariants(), 'neon-glow hover:neon-glow-strong')}>
-              Get started
+              {h.getStarted}
             </Link>
           </nav>
         </div>
@@ -90,42 +57,38 @@ export default function HomePage() {
           <div className="space-y-6">
             <span className="inline-flex items-center gap-2 rounded-full border bg-background/80 px-3 py-1 text-xs font-medium text-primary">
               <span className="h-1.5 w-1.5 rounded-full bg-neon shadow-[0_0_8px_var(--neon)]" />
-              AI receptionist for small businesses
+              {h.badge}
             </span>
             <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
-              Never miss a{' '}
-              <span className="bg-linear-to-r from-primary to-neon bg-clip-text text-transparent">
-                customer call
-              </span>{' '}
-              again.
+              {h.heroBefore}{' '}
+              <span className="bg-linear-to-r from-primary to-neon bg-clip-text text-transparent">{h.heroHighlight}</span>{' '}
+              {h.heroAfter}
             </h1>
-            <p className="max-w-xl text-lg text-muted-foreground">
-              Evano AI answers your phone 24/7, books appointments, answers common questions and
-              forwards urgent calls — so you can focus on your customers, not the ringing phone.
-            </p>
+            <p className="max-w-xl text-lg text-muted-foreground">{h.heroText}</p>
             <div className="flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/auth/register"
                 className={cn(buttonVariants({ size: 'lg' }), 'neon-glow hover:neon-glow-strong h-11 px-6 text-base')}
               >
-                Start free
+                {h.startFree}
                 <ArrowRight className="ml-1.5 h-4 w-4" />
               </Link>
               <Link
                 href="#how-it-works"
                 className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'h-11 px-6 text-base')}
               >
-                See how it works
+                {h.seeHow}
               </Link>
             </div>
             <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
-              {['Set up in minutes', 'No credit card needed', 'Cancel anytime'].map((t) => (
-                <li key={t} className="flex items-center gap-1.5">
+              {h.perks.map((perk) => (
+                <li key={perk} className="flex items-center gap-1.5">
                   <Check className="h-4 w-4 text-primary" />
-                  {t}
+                  {perk}
                 </li>
               ))}
             </ul>
+            <LanguageSwitcher className="sm:hidden" />
           </div>
 
           {/* Illustrative call card */}
@@ -138,33 +101,29 @@ export default function HomePage() {
                     <PhoneIncoming className="h-4 w-4 text-primary-foreground" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Incoming call</p>
-                    <p className="text-xs text-muted-foreground">Answered by Evano AI</p>
+                    <p className="text-sm font-medium">{h.demo.incoming}</p>
+                    <p className="text-xs text-muted-foreground">{h.demo.answeredBy}</p>
                   </div>
                 </div>
                 <span className="flex items-center gap-1.5 text-xs font-medium text-primary">
                   <span className="h-2 w-2 animate-pulse rounded-full bg-neon shadow-[0_0_8px_var(--neon)]" />
-                  Live
+                  {h.demo.live}
                 </span>
               </div>
 
               <div className="space-y-3 text-sm">
-                <p className="w-fit max-w-[85%] rounded-2xl rounded-tl-sm bg-secondary px-3.5 py-2">
-                  Thanks for calling Bright Smile Dental. How can I help you today?
-                </p>
+                <p className="w-fit max-w-[85%] rounded-2xl rounded-tl-sm bg-secondary px-3.5 py-2">{h.demo.line1}</p>
                 <p className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-tr-sm bg-primary px-3.5 py-2 text-primary-foreground">
-                  Hi, can I book a cleaning for Saturday morning?
+                  {h.demo.line2}
                 </p>
-                <p className="w-fit max-w-[85%] rounded-2xl rounded-tl-sm bg-secondary px-3.5 py-2">
-                  Of course — I have 10:00 or 11:30 free on Saturday. Which works better?
-                </p>
+                <p className="w-fit max-w-[85%] rounded-2xl rounded-tl-sm bg-secondary px-3.5 py-2">{h.demo.line3}</p>
               </div>
 
               <div className="flex items-center gap-3 rounded-xl border bg-background px-3.5 py-3">
                 <CalendarCheck className="h-5 w-5 text-primary" />
                 <div className="text-sm">
-                  <p className="font-medium">Booked: Teeth cleaning</p>
-                  <p className="text-xs text-muted-foreground">Saturday · 10:00 – 10:45</p>
+                  <p className="font-medium">{h.demo.booked}</p>
+                  <p className="text-xs text-muted-foreground">{h.demo.bookedWhen}</p>
                 </div>
               </div>
             </div>
@@ -176,33 +135,32 @@ export default function HomePage() {
       <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
         <div className="mx-auto mb-12 max-w-2xl text-center">
           <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            A front desk that <span className="neon-text">never sleeps</span>
+            {h.featuresTitleBefore} <span className="neon-text">{h.featuresTitleHighlight}</span>
           </h2>
-          <p className="mt-3 text-muted-foreground">
-            Everything a great receptionist does — without the missed calls.
-          </p>
+          <p className="mt-3 text-muted-foreground">{h.featuresSubtitle}</p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map(({ icon: Icon, title, body }) => (
-            <div key={title} className="neon-card rounded-xl border bg-card p-6">
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
-                <Icon className="h-5 w-5 text-primary" />
+          {h.features.map(({ title, body }, i) => {
+            const Icon = FEATURE_ICONS[i]
+            return (
+              <div key={title} className="neon-card rounded-xl border bg-card p-6">
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
+                  <Icon className="h-5 w-5 text-primary" />
+                </div>
+                <h3 className="font-medium">{title}</h3>
+                <p className="mt-1.5 text-sm text-muted-foreground">{body}</p>
               </div>
-              <h3 className="font-medium">{title}</h3>
-              <p className="mt-1.5 text-sm text-muted-foreground">{body}</p>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </section>
 
       {/* ------------------------------------------------------- How it works */}
       <section id="how-it-works" className="scroll-mt-16 border-y bg-muted/50">
         <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-          <h2 className="mb-12 text-center text-3xl font-semibold tracking-tight sm:text-4xl">
-            Live in three steps
-          </h2>
+          <h2 className="mb-12 text-center text-3xl font-semibold tracking-tight sm:text-4xl">{h.stepsTitle}</h2>
           <ol className="grid gap-6 md:grid-cols-3">
-            {steps.map((step, i) => (
+            {h.steps.map((step, i) => (
               <li key={step.title} className="rounded-xl border bg-card p-6">
                 <span className="neon-gradient neon-glow mb-4 flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-primary-foreground">
                   {i + 1}
@@ -218,10 +176,8 @@ export default function HomePage() {
       {/* ---------------------------------------------------------------- CTA */}
       <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
         <div className="neon-gradient neon-glow-strong relative overflow-hidden rounded-3xl px-6 py-14 text-center text-primary-foreground sm:px-12">
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Stop losing customers to voicemail</h2>
-          <p className="mx-auto mt-3 max-w-xl text-primary-foreground/85">
-            Set up your AI receptionist today and let every call turn into a booking.
-          </p>
+          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{h.ctaTitle}</h2>
+          <p className="mx-auto mt-3 max-w-xl text-primary-foreground/85">{h.ctaText}</p>
           <Link
             href="/auth/register"
             className={cn(
@@ -229,7 +185,7 @@ export default function HomePage() {
               'mt-8 h-11 bg-background px-6 text-base text-primary hover:bg-background/90'
             )}
           >
-            Get started free
+            {h.ctaButton}
             <ArrowRight className="ml-1.5 h-4 w-4" />
           </Link>
         </div>
@@ -243,8 +199,12 @@ export default function HomePage() {
             <span>© {new Date().getFullYear()} Evano AI</span>
           </div>
           <nav className="flex gap-5">
-            <Link href="/auth/login" className="hover:text-foreground">Sign in</Link>
-            <Link href="/auth/register" className="hover:text-foreground">Create account</Link>
+            <Link href="/auth/login" className="hover:text-foreground">
+              {h.signIn}
+            </Link>
+            <Link href="/auth/register" className="hover:text-foreground">
+              {h.createAccount}
+            </Link>
           </nav>
         </div>
       </footer>

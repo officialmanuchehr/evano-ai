@@ -136,9 +136,9 @@ export function computeSlots(opts: {
   return slots
 }
 
-/** "Friday, 25 September" in the business timezone. */
-export function formatDayLabel(date: LocalDate, timeZone: string) {
-  return zonedToUtc(date, 12, 0, timeZone).toLocaleDateString('en-GB', {
+/** "Friday, 25 September" in the business timezone (`lang` for the dashboard's language). */
+export function formatDayLabel(date: LocalDate, timeZone: string, lang = 'en-GB') {
+  return zonedToUtc(date, 12, 0, timeZone).toLocaleDateString(lang, {
     timeZone,
     weekday: 'long',
     day: 'numeric',

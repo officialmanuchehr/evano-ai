@@ -7,13 +7,8 @@ import { CalendarDays, Check, Loader2, AlertTriangle } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { disconnectGoogleCalendarAction } from '@/lib/actions/integrations'
 import { cn } from '@/lib/utils'
-
-const RESULT_MESSAGES: Record<string, [kind: 'success' | 'error', text: string]> = {
-  connected: ['success', 'Google Calendar connected'],
-  denied: ['error', 'Google Calendar was not connected — access was declined.'],
-  invalid: ['error', 'That connection attempt expired. Please try again.'],
-  error: ['error', 'Could not connect Google Calendar. Please try again.'],
-}
+import { interpolate } from '@/lib/i18n/config'
+import { useI18n } from '@/lib/i18n/client'
 
 // =============================================================================
 // Google Calendar connection card
@@ -28,23 +23,25 @@ export function GoogleCalendarCard({
   result: string | null
 }) {
   const router = useRouter()
+  const { t } = useI18n()
+  const g = t.integrations
   const [pending, startTransition] = useTransition()
 
   // Show the outcome of the OAuth round-trip once, then clean the URL
   useEffect(() => {
-    const message = result ? RESULT_MESSAGES[result] : undefined
+    const message = result ? g.results[result] : undefined
     if (!message) return
-    if (message[0] === 'success') toast.success(message[1])
-    else toast.error(message[1])
+    if (result === 'connected') toast.success(message)
+    else toast.error(message)
     router.replace('/dashboard/integrations')
-  }, [result, router])
+  }, [result, router, g.results])
 
   function disconnect() {
-    if (!confirm('Disconnect Google Calendar? Existing calendar events stay in your calendar.')) return
+    if (!confirm(g.disconnectConfirm)) return
     startTransition(async () => {
       const res = await disconnectGoogleCalendarAction()
-      if (res.success) toast.success('Google Calendar disconnected')
-      else toast.error(res.error ?? 'Could not disconnect')
+      if (res.success) toast.success(g.disconnected)
+      else toast.error(res.error ?? t.errors.googleDisconnectFailed)
     })
   }
 
@@ -59,18 +56,16 @@ export function GoogleCalendarCard({
             <CalendarDays className="h-5 w-5 text-primary" />
           </span>
           <div>
-            <h2 className="font-medium">Google Calendar</h2>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              Bookings appear in your calendar, and busy times in your calendar can’t be booked.
-            </p>
+            <h2 className="font-medium">{g.google}</h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">{g.googleText}</p>
             {status === 'connected' && (
               <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-primary">
-                <Check className="h-4 w-4" /> Connected{email ? ` as ${email}` : ''}
+                <Check className="h-4 w-4" /> {email ? interpolate(g.connectedAs, { email }) : g.connected}
               </p>
             )}
             {status === 'error' && (
               <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-destructive">
-                <AlertTriangle className="h-4 w-4" /> Access expired — reconnect to keep syncing
+                <AlertTriangle className="h-4 w-4" /> {g.expired}
               </p>
             )}
           </div>
@@ -80,11 +75,11 @@ export function GoogleCalendarCard({
           {status === 'connected' ? (
             <Button type="button" variant="outline" onClick={disconnect} disabled={pending}>
               {pending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
-              Disconnect
+              {g.disconnect}
             </Button>
           ) : (
             <a href={connectHref} className={cn(buttonVariants(), 'neon-glow hover:neon-glow-strong')}>
-              {status === 'error' ? 'Reconnect' : 'Connect Google Calendar'}
+              {status === 'error' ? g.reconnect : g.connect}
             </a>
           )}
         </div>

@@ -5,8 +5,13 @@ import { BookingForm } from '@/components/bookings/booking-form'
 import { rescheduleBookingAction } from '@/lib/actions/bookings'
 import { toIsoDate, zonedParts } from '@/lib/bookings/availability'
 import type { ServiceItem } from '@/lib/onboarding/constants'
+import { getI18n } from '@/lib/i18n/server'
+import { interpolate } from '@/lib/i18n/config'
 
-export const metadata: Metadata = { title: 'Reschedule booking' }
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n()
+  return { title: t.bookings.editTitle }
+}
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -16,6 +21,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 export default async function EditBookingPage({ params }: { params: Promise<{ id: string }> }) {
   const auth = await getAuthenticatedUser()
   if (!auth) redirect('/auth/login')
+  const { t } = await getI18n()
 
   const { id } = await params
   if (!UUID_RE.test(id)) notFound()
@@ -40,13 +46,13 @@ export default async function EditBookingPage({ params }: { params: Promise<{ id
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-6 lg:p-8">
       <div>
-        <h1 className="neon-text text-2xl font-semibold">Reschedule booking</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Times are in your business timezone ({timeZone}).</p>
+        <h1 className="neon-text text-2xl font-semibold">{t.bookings.editTitle}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{interpolate(t.bookings.timezoneNote, { tz: timeZone })}</p>
       </div>
       <BookingForm
         action={rescheduleBookingAction.bind(null, booking.id)}
         services={services}
-        submitLabel="Save changes"
+        submitLabel={t.common.save}
         defaults={{
           customerName: booking.customer_name ?? '',
           customerPhone: booking.customer_phone ?? '',

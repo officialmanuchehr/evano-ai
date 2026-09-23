@@ -21,6 +21,8 @@ import {
   type Tone,
 } from '@/lib/agent/constants'
 import { selectClassName } from '@/lib/onboarding/constants'
+import { interpolate } from '@/lib/i18n/config'
+import { useI18n } from '@/lib/i18n/client'
 import { keepValues } from '@/lib/forms'
 
 export type AgentFormValues = {
@@ -45,6 +47,8 @@ function Counter({ value, max }: { value: string; max: number }) {
 // AI Receptionist settings form
 // =============================================================================
 export function AgentForm({ initial, businessName }: { initial: AgentFormValues; businessName: string }) {
+  const { t } = useI18n()
+  const a = t.agent
   const [name, setName] = useState(initial.name)
   const [greeting, setGreeting] = useState(initial.greeting)
   const [tone, setTone] = useState<Tone>(initial.tone)
@@ -63,7 +67,7 @@ export function AgentForm({ initial, businessName }: { initial: AgentFormValues;
 
   const [, action, pending] = useActionState(async (_: unknown, formData: FormData) => {
     const result = await updateAgentAction(formData)
-    if (result.success) toast.success('Settings saved')
+    if (result.success) toast.success(a.saved)
     else if (result.error) toast.error(result.error)
     return result
   }, null)
@@ -73,17 +77,17 @@ export function AgentForm({ initial, businessName }: { initial: AgentFormValues;
       {/* ------------------------------------------------ Identity + greeting */}
       <section className="space-y-5 rounded-xl border bg-card p-5 sm:p-6">
         <div>
-          <h2 className="font-medium">Identity</h2>
-          <p className="text-sm text-muted-foreground">How your receptionist introduces itself.</p>
+          <h2 className="font-medium">{a.identity}</h2>
+          <p className="text-sm text-muted-foreground">{a.identityText}</p>
         </div>
 
         <div className="grid gap-5 sm:grid-cols-3">
           <div className="space-y-2">
-            <Label htmlFor="name">Receptionist name</Label>
+            <Label htmlFor="name">{a.name}</Label>
             <Input id="name" name="name" value={name} onChange={(e) => setName(e.target.value)} required disabled={pending} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="language">Language</Label>
+            <Label htmlFor="language">{t.common.language}</Label>
             <select
               id="language"
               name="language"
@@ -100,7 +104,7 @@ export function AgentForm({ initial, businessName }: { initial: AgentFormValues;
             </select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="voice_id">Voice</Label>
+            <Label htmlFor="voice_id">{a.voice}</Label>
             <select
               id="voice_id"
               name="voice_id"
@@ -120,7 +124,7 @@ export function AgentForm({ initial, businessName }: { initial: AgentFormValues;
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="greeting">Greeting</Label>
+            <Label htmlFor="greeting">{a.greeting}</Label>
             <Counter value={greeting} max={LIMITS.greeting} />
           </div>
           <Textarea
@@ -138,7 +142,7 @@ export function AgentForm({ initial, businessName }: { initial: AgentFormValues;
               <PhoneIncoming className="h-3.5 w-3.5 text-primary-foreground" />
             </span>
             <div className="min-w-0 text-sm">
-              <p className="text-xs font-medium text-primary">{name || 'Receptionist'} says</p>
+              <p className="text-xs font-medium text-primary">{interpolate(a.says, { name: name || a.receptionist })}</p>
               <p className="break-words">“{greeting || '…'}”</p>
             </div>
           </div>
@@ -148,38 +152,38 @@ export function AgentForm({ initial, businessName }: { initial: AgentFormValues;
       {/* ------------------------------------------------------ Personality */}
       <section className="space-y-5 rounded-xl border bg-card p-5 sm:p-6">
         <div>
-          <h2 className="font-medium">Personality</h2>
-          <p className="text-sm text-muted-foreground">The style your receptionist speaks in.</p>
+          <h2 className="font-medium">{a.personality}</h2>
+          <p className="text-sm text-muted-foreground">{a.personalityText}</p>
         </div>
 
         <fieldset className="space-y-2" disabled={pending}>
-          <legend className="mb-2 text-sm font-medium">Tone</legend>
+          <legend className="mb-2 text-sm font-medium">{a.tone}</legend>
           <div className="grid gap-2 sm:grid-cols-3">
-            {TONES.map((t) => (
+            {TONES.map((tn) => (
               <label
-                key={t.value}
+                key={tn.value}
                 className={cn(
                   'cursor-pointer rounded-lg border p-3 transition-colors',
-                  tone === t.value ? 'border-primary bg-secondary neon-glow' : 'hover:bg-muted'
+                  tone === tn.value ? 'border-primary bg-secondary neon-glow' : 'hover:bg-muted'
                 )}
               >
                 <input
                   type="radio"
                   name="tone"
-                  value={t.value}
-                  checked={tone === t.value}
-                  onChange={() => setTone(t.value)}
+                  value={tn.value}
+                  checked={tone === tn.value}
+                  onChange={() => setTone(tn.value)}
                   className="sr-only"
                 />
-                <span className="block text-sm font-medium">{t.label}</span>
-                <span className="block text-xs text-muted-foreground">{t.description}</span>
+                <span className="block text-sm font-medium">{t.labels.tones[tn.value].label}</span>
+                <span className="block text-xs text-muted-foreground">{t.labels.tones[tn.value].description}</span>
               </label>
             ))}
           </div>
         </fieldset>
 
         <fieldset className="space-y-2" disabled={pending}>
-          <legend className="mb-2 text-sm font-medium">Answer length</legend>
+          <legend className="mb-2 text-sm font-medium">{a.answerLength}</legend>
           <div className="inline-flex rounded-lg border p-1">
             {RESPONSE_LENGTHS.map((r) => (
               <label
@@ -197,7 +201,7 @@ export function AgentForm({ initial, businessName }: { initial: AgentFormValues;
                   onChange={() => setLength(r.value)}
                   className="sr-only"
                 />
-                {r.label}
+                {t.labels.lengths[r.value]}
               </label>
             ))}
           </div>
@@ -208,21 +212,19 @@ export function AgentForm({ initial, businessName }: { initial: AgentFormValues;
       <section className="space-y-3 rounded-xl border bg-card p-5 sm:p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="font-medium">Custom instructions</h2>
-            <p className="text-sm text-muted-foreground">
-              Anything specific the receptionist should always do or never do.
-            </p>
+            <h2 className="font-medium">{a.instructions}</h2>
+            <p className="text-sm text-muted-foreground">{a.instructionsText}</p>
           </div>
           <Counter value={instructions} max={LIMITS.instructions} />
         </div>
         <Textarea
           id="system_prompt"
           name="system_prompt"
-          aria-label="Custom instructions"
+          aria-label={a.instructions}
           rows={5}
           value={instructions}
           onChange={(e) => setInstructions(e.target.value)}
-          placeholder={'e.g. Always ask for the caller’s name first.\nNever quote prices for surgery — offer a consultation instead.'}
+          placeholder={a.instructionsPlaceholder}
           disabled={pending}
         />
       </section>
@@ -232,10 +234,10 @@ export function AgentForm({ initial, businessName }: { initial: AgentFormValues;
           {pending ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Saving…
+              {t.common.saving}
             </>
           ) : (
-            'Save changes'
+            t.common.save
           )}
         </Button>
       </div>

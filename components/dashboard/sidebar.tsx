@@ -3,11 +3,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { cn } from '@/lib/utils'
-import { BrandMark } from '@/components/brand/logo'
-import { Button } from '@/components/ui/button'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { logoutAction } from '@/lib/actions/auth'
 import {
   LayoutDashboard,
   Bot,
@@ -20,46 +15,46 @@ import {
   Menu,
   LogOut,
 } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { BrandMark } from '@/components/brand/logo'
+import { Button } from '@/components/ui/button'
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { LanguageSwitcher } from '@/components/i18n/language-switcher'
+import { logoutAction } from '@/lib/actions/auth'
+import { useI18n } from '@/lib/i18n/client'
+import type { Dictionary } from '@/lib/i18n/dictionaries/en'
 
-const navigation = [
-  { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'AI Receptionist', href: '/dashboard/agent', icon: Bot },
-  { name: 'Calls', href: '/dashboard/calls', icon: PhoneCall },
-  { name: 'Bookings', href: '/dashboard/bookings', icon: CalendarDays },
-  { name: 'Knowledge', href: '/dashboard/knowledge', icon: BookOpen },
-  { name: 'Phone', href: '/dashboard/phone', icon: Phone },
-  { name: 'Integrations', href: '/dashboard/integrations', icon: Puzzle },
-  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+const navigation: { key: keyof Dictionary['nav']; href: string; icon: typeof LayoutDashboard }[] = [
+  { key: 'overview', href: '/dashboard', icon: LayoutDashboard },
+  { key: 'agent', href: '/dashboard/agent', icon: Bot },
+  { key: 'calls', href: '/dashboard/calls', icon: PhoneCall },
+  { key: 'bookings', href: '/dashboard/bookings', icon: CalendarDays },
+  { key: 'knowledge', href: '/dashboard/knowledge', icon: BookOpen },
+  { key: 'phone', href: '/dashboard/phone', icon: Phone },
+  { key: 'integrations', href: '/dashboard/integrations', icon: Puzzle },
+  { key: 'settings', href: '/dashboard/settings', icon: Settings },
 ]
 
-interface SidebarProps {
-  orgName: string
-  userInitial: string
-  onNavigate?: () => void
-}
-
-function SidebarContent({ orgName, userInitial, onNavigate }: SidebarProps) {
+function SidebarContent({ orgName, onNavigate }: { orgName: string; onNavigate?: () => void }) {
   const pathname = usePathname()
+  const { t } = useI18n()
 
   return (
     <div className="flex h-full flex-col">
       {/* Logo / org name */}
-      <div className="flex h-14 items-center gap-2 px-4 border-b">
+      <div className="flex h-14 items-center gap-2 border-b px-4">
         <BrandMark />
-        <span className="font-semibold text-sm truncate">{orgName}</span>
+        <span className="truncate text-sm font-semibold">{orgName}</span>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-0.5">
+      <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-4">
         {navigation.map((item) => {
-          const isActive =
-            item.href === '/dashboard'
-              ? pathname === '/dashboard'
-              : pathname.startsWith(item.href)
+          const isActive = item.href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(item.href)
 
           return (
             <Link
-              key={item.name}
+              key={item.key}
               href={item.href}
               onClick={onNavigate}
               className={cn(
@@ -70,21 +65,22 @@ function SidebarContent({ orgName, userInitial, onNavigate }: SidebarProps) {
               )}
             >
               <item.icon className="h-4 w-4 flex-shrink-0" />
-              {item.name}
+              {t.nav[item.key]}
             </Link>
           )
         })}
       </nav>
 
       {/* Footer */}
-      <div className="border-t p-2 space-y-0.5">
+      <div className="space-y-2 border-t p-2">
+        <LanguageSwitcher className="mx-1" />
         <form action={logoutAction}>
           <button
             type="submit"
-            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <LogOut className="h-4 w-4 flex-shrink-0" />
-            Sign out
+            {t.common.signOut}
           </button>
         </form>
       </div>
@@ -92,40 +88,32 @@ function SidebarContent({ orgName, userInitial, onNavigate }: SidebarProps) {
   )
 }
 
-interface DashboardSidebarProps {
-  orgName: string
-  userInitial: string
-}
-
-export function DashboardSidebar({ orgName, userInitial }: DashboardSidebarProps) {
+export function DashboardSidebar({ orgName }: { orgName: string }) {
   const [open, setOpen] = useState(false)
+  const { t } = useI18n()
 
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-56 lg:border-r lg:fixed lg:inset-y-0 lg:z-50 bg-background">
-        <SidebarContent orgName={orgName} userInitial={userInitial} />
+      <aside className="hidden bg-background lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-56 lg:flex-col lg:border-r">
+        <SidebarContent orgName={orgName} />
       </aside>
 
       {/* Mobile header + drawer */}
-      <header className="lg:hidden flex items-center justify-between h-14 border-b px-4 fixed top-0 left-0 right-0 z-50 bg-background">
+      <header className="fixed top-0 right-0 left-0 z-50 flex h-14 items-center justify-between border-b bg-background px-4 lg:hidden">
         <div className="flex items-center gap-2">
           <BrandMark />
-          <span className="font-semibold text-sm truncate max-w-[160px]">{orgName}</span>
+          <span className="max-w-[160px] truncate text-sm font-semibold">{orgName}</span>
         </div>
 
         <Sheet open={open} onOpenChange={setOpen}>
           {/* base-ui uses `render` (not Radix's `asChild`) to swap the trigger element */}
           <SheetTrigger render={<Button variant="ghost" size="icon" className="h-8 w-8" />}>
             <Menu className="h-4 w-4" />
-            <span className="sr-only">Open menu</span>
+            <span className="sr-only">{t.nav.openMenu}</span>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-56">
-            <SidebarContent
-              orgName={orgName}
-              userInitial={userInitial}
-              onNavigate={() => setOpen(false)}
-            />
+          <SheetContent side="left" className="w-56 p-0">
+            <SidebarContent orgName={orgName} onNavigate={() => setOpen(false)} />
           </SheetContent>
         </Sheet>
       </header>

@@ -7,23 +7,25 @@ import { createAdminClient, getAuthenticatedUser } from '@/lib/supabase/server'
 import { syncAssistant, webhookConfig } from '@/lib/vapi/sync'
 import { deletePhoneNumber, importTwilioNumber, setPhoneNumberAssistant, VapiError } from '@/lib/vapi/client'
 import type { ActionResult } from '@/lib/actions/auth'
+import { getI18n } from '@/lib/i18n/server'
+import type { Dictionary } from '@/lib/i18n/dictionaries/en'
 
 // =============================================================================
 // Connect a Twilio number to the organization's receptionist.
 // The Twilio auth token is passed straight to Vapi and never stored by us.
 // =============================================================================
 
-const twilioSchema = z.object({
+const twilioSchema = (e: Dictionary['errors']) => z.object({
   number: z
     .string()
     .trim()
     .transform((v) => v.replace(/[\s()-]/g, ''))
-    .refine((v) => /^\+[1-9]\d{6,14}$/.test(v), 'Enter the number in international format, e.g. +12025550123'),
+    .refine((v) => /^\+[1-9]\d{6,14}$/.test(v), e.phoneFormat),
   accountSid: z
     .string()
     .trim()
-    .regex(/^AC[0-9a-fA-F]{32}$/, 'Account SID starts with "AC" followed by 32 characters'),
-  authToken: z.string().trim().min(16, 'Enter your Twilio auth token'),
+    .regex(/^AC[0-9a-fA-F]{32}$/, e.sidFormat),
+  authToken: z.string().trim().min(16, e.tokenMissing),
 })
 
 async function requireOrg() {
@@ -33,7 +35,8 @@ async function requireOrg() {
 }
 
 export async function connectTwilioNumberAction(formData: FormData): Promise<ActionResult> {
-  const parsed = twilioSchema.safeParse({
+  const { t } = await getI18n()
+  const parsed = twilioSchema(t.errors).safeParse({
     number: formData.get('number') ?? '',
     accountSid: formData.get('accountSid') ?? '',
     authToken: formData.get('authToken') ?? '',
@@ -44,7 +47,7 @@ export async function connectTwilioNumberAction(formData: FormData): Promise<Act
   const db = createAdminClient()
 
   const { data: existing } = await db.from('phone_numbers').select('id').eq('organization_id', orgId).maybeSingle()
-  if (existing) return { success: false, error: 'A phone number is already connected. Disconnect it first.' }
+  if (existing) return { success: false, error: t.errors.phoneExists }
 
   const { webhookUrl, webhookSecret } = webhookConfig()
 
@@ -62,7 +65,7 @@ export async function connectTwilioNumberAction(formData: FormData): Promise<Act
   } catch (err) {
     console.error('[phone.connect] import failed', err)
     const detail = err instanceof VapiError ? ` (${err.message})` : ''
-    return { success: false, error: `Could not connect this number. Check the number and Twilio credentials.${detail}` }
+    return { success: false, error: `${t.errors.phoneConnectFailed}${detail}` }
   }
 
   // 2. Create/refresh the assistant and attach it — the receptionist is live
@@ -72,7 +75,7 @@ export async function connectTwilioNumberAction(formData: FormData): Promise<Act
   } catch (err) {
     console.error('[phone.connect] assistant attach failed', err)
     await deletePhoneNumber(vapiNumberId).catch(() => {}) // roll back the import
-    return { success: false, error: 'The number was accepted but the receptionist could not be attached. Please try again.' }
+    return { success: false, error: t.errors.phoneAttachFailed }
   }
 
   const { data: agent } = await db.from('ai_agents').select('id').eq('organization_id', orgId).single()
@@ -87,7 +90,7 @@ export async function connectTwilioNumberAction(formData: FormData): Promise<Act
   if (error) {
     console.error('[phone.connect] db insert failed', error.message)
     await deletePhoneNumber(vapiNumberId).catch(() => {})
-    return { success: false, error: 'Could not save the phone number. Please try again.' }
+    return { success: false, error: t.errors.phoneSaveFailed }
   }
 
   await db.from('ai_agents').update({ status: 'active' }).eq('organization_id', orgId)
@@ -100,6 +103,7 @@ export async function connectTwilioNumberAction(formData: FormData): Promise<Act
 // =============================================================================
 
 export async function disconnectPhoneAction(): Promise<ActionResult> {
+  const { t } = await getI18n()
   const { orgId } = await requireOrg()
   const db = createAdminClient()
 
@@ -117,7 +121,7 @@ export async function disconnectPhoneAction(): Promise<ActionResult> {
       // Already gone in Vapi is fine; anything else is a real failure
       if (!(err instanceof VapiError && err.status === 404)) {
         console.error('[phone.disconnect]', err)
-        return { success: false, error: 'Could not disconnect the number. Please try again.' }
+        return { success: false, error: t.errors.phoneDisconnectFailed }
       }
     }
   }

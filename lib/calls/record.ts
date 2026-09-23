@@ -3,6 +3,7 @@ import 'server-only'
 import { createAdminClient } from '@/lib/supabase/server'
 import { summarizeCall, type TranscriptLine } from '@/lib/ai/call-summary'
 import type { Json } from '@/types/database'
+import { LANGUAGES } from '@/lib/agent/constants'
 
 // =============================================================================
 // Persist Vapi call events into public.calls (service role — webhook context).
@@ -191,9 +192,14 @@ async function bumpUsage(orgId: string, startedAt: string | null, durationSecond
 /** Claude summary + purpose — run via after() so Vapi isn't kept waiting. */
 export async function summarizeAndStore(callRowId: string, orgId: string, transcript: TranscriptLine[]) {
   const db = createAdminClient()
-  const { data: org } = await db.from('organizations').select('name').eq('id', orgId).single()
+  const [{ data: org }, { data: agent }] = await Promise.all([
+    db.from('organizations').select('name').eq('id', orgId).single(),
+    db.from('ai_agents').select('language').eq('organization_id', orgId).maybeSingle(),
+  ])
+  // Summarise in the language the receptionist speaks (e.g. Russian for ru-RU)
+  const language = agent?.language?.startsWith('ru') ? 'Russian' : LANGUAGES.find((l) => l.value === agent?.language)?.label.split(' ')[0] ?? 'English'
   try {
-    const result = await summarizeCall(transcript, org?.name ?? 'the business')
+    const result = await summarizeCall(transcript, org?.name ?? 'the business', language)
     if (!result) return
     const summary = result.follow_up_needed ? `${result.summary} Follow-up needed.` : result.summary
     await db.from('calls').update({ summary, purpose: result.purpose }).eq('id', callRowId)

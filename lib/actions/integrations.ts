@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { getAuthenticatedUser } from '@/lib/supabase/server'
 import { disconnect } from '@/lib/integrations/google-calendar'
 import type { ActionResult } from '@/lib/actions/auth'
+import { getI18n } from '@/lib/i18n/server'
 
 // =============================================================================
 // Disconnect Google Calendar (revokes the token at Google, deletes our copy).
@@ -18,7 +19,7 @@ export async function disconnectGoogleCalendarAction(): Promise<ActionResult> {
     await disconnect(auth.profile.organization_id)
   } catch (err) {
     console.error('[integrations.disconnect]', err)
-    return { success: false, error: 'Could not disconnect Google Calendar. Please try again.' }
+    return { success: false, error: (await getI18n()).t.errors.googleDisconnectFailed }
   }
   revalidatePath('/dashboard/integrations')
   return { success: true }

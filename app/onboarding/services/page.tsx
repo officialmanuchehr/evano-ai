@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient, getAuthenticatedUser } from '@/lib/supabase/server'
 import { StepCard } from '@/components/onboarding/step-card'
+import { getI18n } from '@/lib/i18n/server'
 import { ServicesForm } from '@/components/onboarding/services-form'
 import type { FaqItem, ServiceItem } from '@/lib/onboarding/constants'
 
@@ -10,6 +11,7 @@ import type { FaqItem, ServiceItem } from '@/lib/onboarding/constants'
 export default async function OnboardingServicesPage() {
   const auth = await getAuthenticatedUser()
   if (!auth) redirect('/auth/login')
+  const { t } = await getI18n()
 
   const orgId = auth.profile.organization_id
   const supabase = await createClient()
@@ -26,10 +28,7 @@ export default async function OnboardingServicesPage() {
   const services = Array.isArray(info?.services) ? (info.services as ServiceItem[]) : []
 
   return (
-    <StepCard
-      title="What do callers ask about?"
-      description="Add your services and common questions. Your receptionist answers from this — you can change it anytime."
-    >
+    <StepCard title={t.onboarding.services.title} description={t.onboarding.services.description}>
       <ServicesForm initialServices={services} initialFaqs={(faqs ?? []) as FaqItem[]} />
     </StepCard>
   )

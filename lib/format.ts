@@ -2,9 +2,11 @@
 // Display formatting — always in the business's timezone (the server runs UTC)
 // =============================================================================
 
-export function formatDateTime(iso: string | null, timeZone: string) {
+// `lang` is a BCP-47 tag from INTL_LOCALE (en-US / ru-RU)
+
+export function formatDateTime(iso: string | null, timeZone: string, lang = 'en-US') {
   if (!iso) return '—'
-  return new Date(iso).toLocaleString('en-US', {
+  return new Date(iso).toLocaleString(lang, {
     timeZone,
     month: 'short',
     day: 'numeric',
@@ -13,14 +15,14 @@ export function formatDateTime(iso: string | null, timeZone: string) {
   })
 }
 
-export function formatTime(iso: string | null, timeZone: string) {
+export function formatTime(iso: string | null, timeZone: string, lang = 'en-US') {
   if (!iso) return '—'
-  return new Date(iso).toLocaleTimeString('en-US', { timeZone, hour: 'numeric', minute: '2-digit' })
+  return new Date(iso).toLocaleTimeString(lang, { timeZone, hour: 'numeric', minute: '2-digit' })
 }
 
-export function formatDate(iso: string | null, timeZone: string) {
+export function formatDate(iso: string | null, timeZone: string, lang = 'en-US') {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('en-US', { timeZone, weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+  return new Date(iso).toLocaleDateString(lang, { timeZone, weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 /** 95 → "1:35" */

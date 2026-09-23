@@ -1,11 +1,13 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Toaster } from 'sonner'
+import { I18nProvider } from '@/lib/i18n/client'
+import { getI18n } from '@/lib/i18n/server'
 import './globals.css'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
-  subsets: ['latin'],
+  subsets: ['latin', 'cyrillic'],
 })
 
 const geistMono = Geist_Mono({
@@ -13,23 +15,23 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 })
 
-export const metadata: Metadata = {
-  title: {
-    default: 'Evano AI',
-    template: '%s — Evano AI',
-  },
-  description:
-    'Never miss a customer call again. AI Receptionist answers calls, books appointments, and handles FAQs 24/7.',
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n()
+  return {
+    title: { default: 'Evano AI', template: '%s — Evano AI' },
+    description: t.meta.description,
+  }
 }
 
-export default function RootLayout({ children }: LayoutProps<'/'>) {
+export default async function RootLayout({ children }: LayoutProps<'/'>) {
+  const { locale, t } = await getI18n()
+
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
+    <html lang={locale} className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full bg-background text-foreground">
-        {children}
+        <I18nProvider locale={locale} t={t}>
+          {children}
+        </I18nProvider>
         <Toaster position="top-right" richColors />
       </body>
     </html>

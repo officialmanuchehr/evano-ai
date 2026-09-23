@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { keepValues } from '@/lib/forms'
 import { selectClassName } from '@/lib/onboarding/constants'
 import type { ActionResult } from '@/lib/actions/auth'
+import { useI18n } from '@/lib/i18n/client'
 
 export type BookingFormDefaults = {
   customerName: string
@@ -35,6 +36,8 @@ export function BookingForm({
   services: { name: string; duration: number | null }[]
   submitLabel: string
 }) {
+  const { t } = useI18n()
+  const b = t.bookings
   const [, action, pending] = useActionState(async (_: unknown, formData: FormData) => {
     const result = await submit(formData)
     if (!result.success && result.error) toast.error(result.error)
@@ -50,23 +53,23 @@ export function BookingForm({
     <form onSubmit={keepValues(action)} className="space-y-5 rounded-xl border bg-card p-5 sm:p-6">
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="customerName">Customer name</Label>
+          <Label htmlFor="customerName">{b.customerName}</Label>
           <Input id="customerName" name="customerName" defaultValue={defaults.customerName} required disabled={pending} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="customerPhone">Phone</Label>
+          <Label htmlFor="customerPhone">{b.phone}</Label>
           <Input id="customerPhone" name="customerPhone" type="tel" defaultValue={defaults.customerPhone} disabled={pending} />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="service">Service</Label>
+        <Label htmlFor="service">{b.service}</Label>
         <select id="service" name="service" defaultValue={defaults.service} disabled={pending} className={selectClassName}>
-          <option value="">General appointment (30 min)</option>
+          <option value="">{b.generalService}</option>
           {serviceOptions.map((s) => (
             <option key={s.name} value={s.name}>
               {s.name}
-              {s.duration ? ` (${s.duration} min)` : ''}
+              {s.duration ? ` (${s.duration} ${t.onboarding.services.min})` : ''}
             </option>
           ))}
         </select>
@@ -74,28 +77,28 @@ export function BookingForm({
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="date">Date</Label>
+          <Label htmlFor="date">{b.date}</Label>
           <Input id="date" name="date" type="date" defaultValue={defaults.date} required disabled={pending} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="time">Time</Label>
+          <Label htmlFor="time">{b.time}</Label>
           <Input id="time" name="time" type="time" step={300} defaultValue={defaults.time} required disabled={pending} />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="notes">Notes</Label>
+        <Label htmlFor="notes">{b.notes}</Label>
         <Textarea id="notes" name="notes" rows={2} defaultValue={defaults.notes} disabled={pending} />
       </div>
 
       <label className="flex items-center gap-2 text-sm text-muted-foreground">
         <input type="checkbox" name="allowOutsideHours" className="h-4 w-4 accent-[var(--primary)]" disabled={pending} />
-        Allow booking outside opening hours
+        {b.allowOutside}
       </label>
 
       <div className="flex justify-end gap-2 border-t pt-5">
         <Link href="/dashboard/bookings" className={buttonVariants({ variant: 'ghost' })}>
-          Cancel
+          {t.common.cancel}
         </Link>
         <Button type="submit" className="neon-glow hover:neon-glow-strong px-5" disabled={pending}>
           {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

@@ -4,19 +4,21 @@ import { usePathname } from 'next/navigation'
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ONBOARDING_STEPS } from '@/lib/onboarding/constants'
+import { useI18n } from '@/lib/i18n/client'
 
 // =============================================================================
 // Onboarding progress — highlights the current step from the URL
 // =============================================================================
 export function OnboardingStepper() {
   const pathname = usePathname()
+  const { t } = useI18n()
   const currentIndex = Math.max(
     0,
     ONBOARDING_STEPS.findIndex((s) => pathname.startsWith(`/onboarding/${s.slug}`))
   )
 
   return (
-    <ol className="flex items-center gap-2 sm:gap-4" aria-label="Setup progress">
+    <ol className="flex items-center gap-2 sm:gap-4" aria-label={t.onboarding.progress}>
       {ONBOARDING_STEPS.map((step, i) => {
         const done = i < currentIndex
         const active = i === currentIndex
@@ -36,9 +38,9 @@ export function OnboardingStepper() {
             </span>
             <div className="hidden min-w-0 sm:block">
               <p className={cn('truncate text-sm font-medium', !active && !done && 'text-muted-foreground')}>
-                {step.title}
+                {t.onboarding.steps[step.slug].title}
               </p>
-              <p className="truncate text-xs text-muted-foreground">{step.description}</p>
+              <p className="truncate text-xs text-muted-foreground">{t.onboarding.steps[step.slug].description}</p>
             </div>
             {i < ONBOARDING_STEPS.length - 1 && (
               <span className={cn('h-px flex-1', done ? 'bg-primary' : 'bg-border')} />

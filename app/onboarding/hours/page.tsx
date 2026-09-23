@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient, getAuthenticatedUser } from '@/lib/supabase/server'
 import { StepCard } from '@/components/onboarding/step-card'
+import { getI18n } from '@/lib/i18n/server'
 import { HoursForm, type DayHours } from '@/components/onboarding/hours-form'
 
 // =============================================================================
@@ -9,6 +10,7 @@ import { HoursForm, type DayHours } from '@/components/onboarding/hours-form'
 export default async function OnboardingHoursPage() {
   const auth = await getAuthenticatedUser()
   if (!auth) redirect('/auth/login')
+  const { t } = await getI18n()
 
   const orgId = auth.profile.organization_id
   const supabase = await createClient()
@@ -39,10 +41,7 @@ export default async function OnboardingHoursPage() {
   })
 
   return (
-    <StepCard
-      title="When are you open?"
-      description="Your receptionist tells callers your hours and only books appointments while you're open."
-    >
+    <StepCard title={t.onboarding.hours.title} description={t.onboarding.hours.description}>
       <HoursForm
         initialHours={initialHours}
         initialAfterHours={info?.after_hours_behavior ?? 'ai'}

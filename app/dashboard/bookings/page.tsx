@@ -7,23 +7,16 @@ import { buttonVariants } from '@/components/ui/button'
 import { BookingActions } from '@/components/bookings/booking-actions'
 import { formatDate, formatTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
+import { getI18n } from '@/lib/i18n/server'
+import { INTL_LOCALE } from '@/lib/i18n/config'
 
-export const metadata: Metadata = { title: 'Bookings' }
-
-const VIEWS = [
-  { value: 'upcoming', label: 'Upcoming' },
-  { value: 'past', label: 'Past' },
-  { value: 'cancelled', label: 'Cancelled' },
-] as const
-type View = (typeof VIEWS)[number]['value']
-
-const STATUS_LABEL: Record<string, string> = {
-  confirmed: 'Confirmed',
-  rescheduled: 'Rescheduled',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-  no_show: 'No-show',
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n()
+  return { title: t.bookings.title }
 }
+
+const VIEWS = [{ value: 'upcoming' }, { value: 'past' }, { value: 'cancelled' }] as const
+type View = (typeof VIEWS)[number]['value']
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
 
@@ -34,6 +27,9 @@ export default async function BookingsPage({ searchParams }: { searchParams: Sea
   const auth = await getAuthenticatedUser()
   if (!auth) redirect('/auth/login')
 
+  const { locale, t } = await getI18n()
+  const bk = t.bookings
+  const lang = INTL_LOCALE[locale]
   const raw = (await searchParams).view
   const view: View = VIEWS.some((v) => v.value === raw) ? (raw as View) : 'upcoming'
   const timeZone = auth.profile.organizations?.timezone ?? 'UTC'
@@ -60,16 +56,16 @@ export default async function BookingsPage({ searchParams }: { searchParams: Sea
     <div className="mx-auto max-w-5xl space-y-6 p-6 lg:p-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="neon-text text-2xl font-semibold">Bookings</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Appointments booked by your receptionist or by you.</p>
+          <h1 className="neon-text text-2xl font-semibold">{bk.title}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{bk.subtitle}</p>
         </div>
         <Link href="/dashboard/bookings/new" className={cn(buttonVariants(), 'neon-glow hover:neon-glow-strong')}>
-          <Plus className="h-4 w-4" /> New booking
+          <Plus className="h-4 w-4" /> {bk.newBooking}
         </Link>
       </div>
 
       {/* View tabs */}
-      <nav className="inline-flex rounded-lg border p-1" aria-label="Booking views">
+      <nav className="inline-flex rounded-lg border p-1" aria-label={bk.viewsLabel}>
         {VIEWS.map((v) => (
           <Link
             key={v.value}
@@ -80,7 +76,7 @@ export default async function BookingsPage({ searchParams }: { searchParams: Sea
               view === v.value ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            {v.label}
+            {bk.views[v.value]}
           </Link>
         ))}
       </nav>
@@ -92,12 +88,10 @@ export default async function BookingsPage({ searchParams }: { searchParams: Sea
               <CalendarDays className="h-5 w-5 text-primary" />
             </div>
             <p className="text-sm font-medium">
-              {view === 'upcoming' ? 'No upcoming bookings' : view === 'past' ? 'No past bookings' : 'No cancelled bookings'}
+              {view === 'upcoming' ? bk.noneUpcoming : view === 'past' ? bk.nonePast : bk.noneCancelled}
             </p>
             {view === 'upcoming' && (
-              <p className="mt-1 max-w-xs text-sm text-muted-foreground">
-                When your receptionist books an appointment on a call, it shows up here.
-              </p>
+              <p className="mt-1 max-w-xs text-sm text-muted-foreground">{bk.noneText}</p>
             )}
           </div>
         ) : (
@@ -107,30 +101,30 @@ export default async function BookingsPage({ searchParams }: { searchParams: Sea
               return (
                 <li key={b.id} className="grid gap-3 px-4 py-3 sm:grid-cols-[9.5rem_1fr_auto] sm:items-center sm:px-5">
                   <div>
-                    <p className="text-sm font-medium">{formatDate(b.start_time, timeZone).replace(/, \d{4}$/, '')}</p>
+                    <p className="text-sm font-medium">{formatDate(b.start_time, timeZone, lang).replace(/,? \d{4}( г\.)?$/, '')}</p>
                     <p className="text-xs text-muted-foreground tabular-nums">
-                      {formatTime(b.start_time, timeZone)} – {formatTime(b.end_time, timeZone)}
+                      {formatTime(b.start_time, timeZone, lang)} – {formatTime(b.end_time, timeZone, lang)}
                     </p>
                   </div>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">
-                      {b.customer_name ?? 'Unknown'}
-                      <span className="font-normal text-muted-foreground"> · {b.service ?? 'Appointment'}</span>
+                      {b.customer_name ?? t.common.unknown}
+                      <span className="font-normal text-muted-foreground"> · {b.service ?? bk.appointment}</span>
                     </p>
                     <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
                       {b.customer_phone && <span className="tabular-nums">{b.customer_phone}</span>}
-                      <span>{STATUS_LABEL[b.status] ?? b.status}</span>
+                      <span>{t.labels.bookingStatuses[b.status] ?? b.status}</span>
                       {b.created_by === 'ai' ? (
                         <span className="inline-flex items-center gap-1 text-primary">
-                          <Bot className="h-3 w-3" /> Booked by AI
+                          <Bot className="h-3 w-3" /> {bk.bookedByAi}
                           {b.call_id && (
                             <Link href={`/dashboard/calls/${b.call_id}`} className="underline underline-offset-2">
-                              view call
+                              {bk.viewCall}
                             </Link>
                           )}
                         </span>
                       ) : (
-                        <span>Added by you</span>
+                        <span>{bk.addedByYou}</span>
                       )}
                     </p>
                   </div>
