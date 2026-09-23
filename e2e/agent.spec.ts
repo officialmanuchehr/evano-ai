@@ -29,7 +29,7 @@ test('owner can update the receptionist settings', async ({ page }) => {
   // Switching to Russian offers native Russian voices and translates the default greeting
   const businessName = `Agent Test ${user.fullName.slice(-4)}`
   await expect(page.getByLabel('Greeting')).toHaveValue(`Thank you for calling ${businessName}. How can I help you today?`)
-  await page.getByLabel('Language').selectOption('ru-RU')
+  await page.getByLabel('Language', { exact: true }).selectOption('ru-RU')
   await expect(page.getByLabel('Greeting')).toHaveValue(`Здравствуйте! Вы позвонили в ${businessName}. Чем могу помочь?`)
   await expect(page.getByLabel('Voice').locator('option')).toHaveText(['Svetlana (female)', 'Dariya (female)', 'Dmitry (male)'])
   await page.getByLabel('Voice').selectOption('azure:ru-RU-DmitryNeural')
@@ -44,7 +44,7 @@ test('owner can update the receptionist settings', async ({ page }) => {
   // Survives a reload
   await page.reload()
   await expect(page.getByLabel('Receptionist name')).toHaveValue('Sofia')
-  await expect(page.getByLabel('Language')).toHaveValue('ru-RU')
+  await expect(page.getByLabel('Language', { exact: true })).toHaveValue('ru-RU')
   await expect(page.getByLabel('Voice')).toHaveValue('azure:ru-RU-DmitryNeural')
   await expect(page.getByLabel('Custom instructions')).toHaveValue('Always ask for the caller name first.')
 
