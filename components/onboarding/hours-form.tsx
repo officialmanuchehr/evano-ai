@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { StepActions } from '@/components/onboarding/step-card'
 import { saveHoursAction } from '@/lib/actions/onboarding'
 import { WEEK_DAYS, AFTER_HOURS_OPTIONS } from '@/lib/onboarding/constants'
+import { keepValues } from '@/lib/forms'
 
 export type DayHours = { day: number; isClosed: boolean; open: string; close: string }
 type AfterHours = (typeof AFTER_HOURS_OPTIONS)[number]['value']
@@ -38,7 +39,7 @@ export function HoursForm({
   }
 
   return (
-    <form action={action} className="space-y-8">
+    <form onSubmit={keepValues(action)} className="space-y-8">
       {/* Weekly schedule */}
       <fieldset className="space-y-2" disabled={pending}>
         <legend className="mb-3 text-sm font-medium">Opening hours</legend>

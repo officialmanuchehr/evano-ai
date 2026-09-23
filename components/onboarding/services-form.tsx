@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { StepActions, FieldHint } from '@/components/onboarding/step-card'
 import { completeOnboardingAction } from '@/lib/actions/onboarding'
 import type { FaqItem, ServiceItem } from '@/lib/onboarding/constants'
+import { keepValues } from '@/lib/forms'
 
 const emptyService: ServiceItem = { name: '', duration: 30, price: '' }
 const emptyFaq: FaqItem = { question: '', answer: '' }
@@ -46,7 +47,7 @@ export function ServicesForm({
   }
 
   return (
-    <form action={action} className="space-y-8">
+    <form onSubmit={keepValues(action)} className="space-y-8">
       <input type="hidden" name="services" value={JSON.stringify(filledServices)} />
       <input type="hidden" name="faqs" value={JSON.stringify(filledFaqs)} />
 

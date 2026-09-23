@@ -32,6 +32,9 @@ test('register rejects a weak password', async ({ page }) => {
   await register(page, user)
   await expect(page.getByText('Password must be at least 8 characters')).toBeVisible()
   await expect(page).toHaveURL(/\/auth\/register/)
+  // A failed submit must not wipe what the user typed
+  await expect(page.getByLabel('Full name')).toHaveValue(user.fullName)
+  await expect(page.getByLabel('Email address')).toHaveValue(user.email)
 })
 
 test('login rejects wrong credentials', async ({ page }) => {

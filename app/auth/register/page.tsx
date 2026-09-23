@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { registerAction } from '@/lib/actions/auth'
 import { Loader2 } from 'lucide-react'
+import { keepValues } from '@/lib/forms'
 
 export default function RegisterPage() {
   const [, action, pending] = useActionState(
@@ -34,7 +35,7 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        <form action={action} className="space-y-4">
+        <form onSubmit={keepValues(action)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="fullName">Full name</Label>
             <Input

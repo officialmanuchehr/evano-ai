@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { connectTwilioNumberAction, disconnectPhoneAction } from '@/lib/actions/phone'
+import { keepValues } from '@/lib/forms'
 
 // =============================================================================
 // Connect a Twilio number
@@ -20,7 +21,7 @@ export function ConnectTwilioForm() {
   }, null)
 
   return (
-    <form action={action} className="space-y-5">
+    <form onSubmit={keepValues(action)} className="space-y-5">
       <div className="space-y-2">
         <Label htmlFor="number">Twilio phone number</Label>
         <Input id="number" name="number" type="tel" placeholder="+12025550123" required disabled={pending} />

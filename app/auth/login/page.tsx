@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { loginAction } from '@/lib/actions/auth'
 import { Loader2 } from 'lucide-react'
 import { Suspense } from 'react'
+import { keepValues } from '@/lib/forms'
 
 function LoginForm() {
   const searchParams = useSearchParams()
@@ -37,7 +38,7 @@ function LoginForm() {
           <p className="text-sm text-muted-foreground">Sign in to your account.</p>
         </div>
 
-        <form action={action} className="space-y-4">
+        <form onSubmit={keepValues(action)} className="space-y-4">
           <input type="hidden" name="next" value={next} />
 
           <div className="space-y-2">

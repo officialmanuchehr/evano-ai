@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { StepActions, FieldHint } from '@/components/onboarding/step-card'
 import { saveBusinessAction } from '@/lib/actions/onboarding'
 import { INDUSTRIES, TIMEZONES, selectClassName } from '@/lib/onboarding/constants'
+import { keepValues } from '@/lib/forms'
 
 export type BusinessFormDefaults = {
   name: string
@@ -42,7 +43,7 @@ export function BusinessForm({ defaults }: { defaults: BusinessFormDefaults }) {
   }, [defaults.timezone])
 
   return (
-    <form action={action} className="space-y-5">
+    <form onSubmit={keepValues(action)} className="space-y-5">
       <div className="space-y-2">
         <Label htmlFor="name">Business name</Label>
         <Input id="name" name="name" defaultValue={defaults.name} required disabled={pending} />

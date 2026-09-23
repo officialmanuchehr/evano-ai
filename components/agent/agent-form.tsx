@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { updateAgentAction } from '@/lib/actions/agent'
 import { LANGUAGES, LIMITS, RESPONSE_LENGTHS, TONES, VOICES, type ResponseLength, type Tone } from '@/lib/agent/constants'
 import { selectClassName } from '@/lib/onboarding/constants'
+import { keepValues } from '@/lib/forms'
 
 export type AgentFormValues = {
   name: string
@@ -48,7 +49,7 @@ export function AgentForm({ initial }: { initial: AgentFormValues }) {
   }, null)
 
   return (
-    <form action={action} className="space-y-6">
+    <form onSubmit={keepValues(action)} className="space-y-6">
       {/* ------------------------------------------------ Identity + greeting */}
       <section className="space-y-5 rounded-xl border bg-card p-5 sm:p-6">
         <div>
