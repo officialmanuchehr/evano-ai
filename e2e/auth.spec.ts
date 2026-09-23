@@ -89,13 +89,8 @@ test('password reset link lets the user set a new password', async ({ page }) =>
   await page.locator('aside').getByRole('button', { name: 'Sign out' }).click()
   await expect(page).toHaveURL(/\/auth\/login/)
 
-  // Request the reset from the UI (sends the real email)
-  await page.goto('/auth/forgot-password')
-  await page.getByLabel('Email address').fill(user.email)
-  await page.getByRole('button', { name: /send/i }).click()
-  await expect(page.getByText('Check your email')).toBeVisible({ timeout: 15_000 })
-
-  // Follow a recovery link (token_hash style — what the recommended email template sends)
+  // Follow a recovery link — generated via the admin API because Supabase won't
+  // email test addresses (their domain can't receive mail) (token_hash style — what the recommended email template sends)
   const { data, error } = await admin.auth.admin.generateLink({ type: 'recovery', email: user.email })
   expect(error).toBeNull()
   await page.goto(`/auth/confirm?token_hash=${data.properties!.hashed_token}&type=recovery&next=/auth/reset-password`)
@@ -103,11 +98,11 @@ test('password reset link lets the user set a new password', async ({ page }) =>
 
   // Mismatch is rejected and keeps the typed values
   const newPassword = 'Brand-New-Pass-2026'
-  await page.getByLabel('New password').fill(newPassword)
+  await page.getByLabel('New password', { exact: true }).fill(newPassword)
   await page.getByLabel('Confirm new password').fill('Something-Else-1')
   await page.getByRole('button', { name: 'Save new password' }).click()
   await expect(page.getByText('Passwords do not match')).toBeVisible()
-  await expect(page.getByLabel('New password')).toHaveValue(newPassword)
+  await expect(page.getByLabel('New password', { exact: true })).toHaveValue(newPassword)
 
   // Save → signed in on the dashboard
   await page.getByLabel('Confirm new password').fill(newPassword)
@@ -133,4 +128,12 @@ test('confirm route never redirects off-site', async ({ page }) => {
   const appOrigin = new URL(test.info().project.use.baseURL!).origin
   await page.goto('/auth/confirm?code=bad&next=//evil.example.com')
   expect(new URL(page.url()).origin).toBe(appOrigin)
+})
+
+test('forgot password does not reveal whether an account exists', async ({ page }) => {
+  // Unknown email → same "check your email" screen as a real account (no account enumeration)
+  await page.goto('/auth/forgot-password')
+  await page.getByLabel('Email address').fill(`nobody.${Date.now()}@evano-test.dev`)
+  await page.getByRole('button', { name: 'Send reset link' }).click()
+  await expect(page.getByText('Check your email')).toBeVisible({ timeout: 15_000 })
 })
